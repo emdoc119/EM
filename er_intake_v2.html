@@ -12,7 +12,7 @@
         import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
         
         const firebaseConfig = {
-            apiKey: "AIzaSyAogxTcfOA0ag8ZgGdTbLJmuchxp8uyoqA",
+            apiKey: "AIzaSyBVG_OjJOFQjyg849-A4b7rXvrZbIeouAQ",
             authDomain: "er-ktas-app.firebaseapp.com",
             databaseURL: "https://er-ktas-app-default-rtdb.firebaseio.com",
             projectId: "er-ktas-app",
@@ -102,7 +102,6 @@
             </div>
             <div class="chips" id="mchips"></div>
         </div>
-        
         <div class="sc">
             <div class="sh"><div class="si">💊</div><div><div class="st">복용 중인 약</div><div class="ss">약봉투 · 처방전</div></div></div>
             <input type="file" id="rc1" accept="image/*" capture="environment" multiple style="display:none">
@@ -111,7 +110,6 @@
             </div>
             <div class="chips" id="rchips"></div>
         </div>
-
         <div class="sc">
             <div class="sh"><div class="si">💬</div><div class="st">오늘 응급실에 오신 이유</div></div>
             <div class="exs">
@@ -139,7 +137,7 @@
     <div id="rs">
         <div class="sc">
             <h3 style="color:var(--navy); margin-bottom:12px">🩺 환자 정보 요약</h3>
-            <div id="summaryContent" style="font-size:14px; line-height:1.6; color:#333"></div>
+            <div id="summaryContent" style="font-size:14px; line-height:1.6; color:#333; white-space: pre-wrap;"></div>
         </div>
         <button class="sbtn" onclick="doQR()">📤 QR 코드 생성</button>
     </div>
@@ -155,14 +153,12 @@
 </div>
 
 <script>
-    // --- 설정 ---
     const GKEY = 'AIzaSyAogxTcfOA0ag8ZgGdTbLJmuchxp8uyoqA';
     const DRBASE = 'https://emdoc119.github.io/EM/er_doctor.html';
     
     let mf = [], rf = [], mocrT = '', rocrT = '', aiD = null, pid = null, listening = false;
     const REC = 'ER-' + String(Date.now()).slice(-6);
 
-    // --- 파일 처리 ---
     document.getElementById('mc1').addEventListener('change', e => addFiles(e.target.files, mf, 'mchips'));
     document.getElementById('rc1').addEventListener('change', e => addFiles(e.target.files, rf, 'rchips'));
 
@@ -183,76 +179,75 @@
         document.getElementById('reason').value = b.textContent;
     }
 
-    // --- 음성 인식 ---
     let recognition;
     function togMic() {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SR) { alert('지원되지 않는 브라우저입니다.'); return; }
         if (listening) { recognition.stop(); return; }
-
         recognition = new SR();
         recognition.lang = 'ko-KR';
-        recognition.onstart = () => {
-            listening = true;
-            document.getElementById('micbtn').classList.add('ls');
-            document.getElementById('micbtn').textContent = '⏹';
-        };
-        recognition.onresult = e => {
-            document.getElementById('reason').value = e.results[0][0].transcript;
-        };
-        recognition.onend = () => {
-            listening = false;
-            document.getElementById('micbtn').classList.remove('ls');
-            document.getElementById('micbtn').textContent = '🎤';
-        };
+        recognition.onstart = () => { listening = true; document.getElementById('micbtn').classList.add('ls'); document.getElementById('micbtn').textContent = '⏹'; };
+        recognition.onresult = e => { document.getElementById('reason').value = e.results[0][0].transcript; };
+        recognition.onend = () => { listening = false; document.getElementById('micbtn').classList.remove('ls'); document.getElementById('micbtn').textContent = '🎤'; };
         recognition.start();
     }
 
-    // --- AI API 호출 (2026 최신 Flash 모델 사용) ---
+    // --- 최적화된 API 호출 (v1beta 사용) ---
     async function callGemini(prompt, isVision = false, base64 = null, mime = null) {
-        const model = "gemini-1.5-flash"; // 속도와 정확도 밸런스가 가장 좋은 모델
-        const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GKEY}`;
+        // v1beta 경로가 현재 최신 모델 호환성이 가장 높습니다.
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GKEY}`;
         
         let contents = [{ role: "user", parts: [{ text: prompt }] }];
         if (isVision && base64) {
             contents[0].parts.unshift({ inline_data: { mime_type: mime, data: base64 } });
         }
 
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error?.message || 'AI Error');
-        return data.candidates[0].content.parts[0].text;
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || 'AI API 오류');
+            return data.candidates[0].content.parts[0].text;
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
     }
 
     async function f2b64(f) { return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = no; r.readAsDataURL(f); }); }
 
-    // --- 메인 프로세스 ---
     async function doSubmit() {
         const reason = document.getElementById('reason').value.trim();
         if (!reason && !mf.length && !rf.length) { alert('내용을 입력해 주세요.'); return; }
-
+        
         showScr('ps');
         updatePStep('ps1', '진행 중');
-
+        
         try {
-            // OCR (첫 번째 서류만 예시로 수행)
-            if (mf.length) {
-                const b64 = await f2b64(mf[0].file);
-                mocrT = await callGemini("이 서류의 텍스트를 모두 읽어주세요.", true, b64, mf[0].file.type);
+            // OCR 단계
+            let ocrTexts = [];
+            for (let fObj of [...mf, ...rf]) {
+                const b64 = await f2b64(fObj.file);
+                const txt = await callGemini("이 의료 문서의 텍스트를 모두 추출해 주세요.", true, b64, fObj.file.type);
+                ocrTexts.push(txt);
             }
+            mocrT = ocrTexts.join("\n\n");
             updatePStep('ps1', '완료');
             
             updatePStep('ps2', '진행 중');
-            const summaryPrompt = `응급실 의사용 환자 요약문 작성 (JSON 형식 제외, 가독성 좋게): 
-            내원이유: ${reason}, 서류내용: ${mocrT}`;
+            // 의학적 가이드라인을 반영한 프롬프트 (Pathophysiology, Symptoms 중심)
+            const summaryPrompt = `당신은 응급실 의사를 보조하는 전문 AI입니다. 환자의 내원 이유와 첨부 서류 내용을 바탕으로 전문적인 의료 요약을 작성하세요. 
+            구조: 1. 주호소(CC), 2. 현병력(PI), 3. 약물 기력(Medication History), 4. 판독 소견(Impression).
+            내원이유: ${reason}
+            추출된 텍스트: ${mocrT}`;
+            
             const summary = await callGemini(summaryPrompt);
             document.getElementById('summaryContent').innerText = summary;
             updatePStep('ps2', '완료');
-
+            
             updatePStep('ps3', '진행 중');
             if (window._fb) {
                 const { db, ref, push, set } = window._fb;
@@ -261,22 +256,20 @@
                 pid = newRef.key;
             }
             updatePStep('ps3', '완료');
-
-            setStep(3);
+            
+            setStep(3); 
             showScr('rs');
         } catch (e) {
-            alert('오류 발생: ' + e.message);
-            location.reload();
+            alert('분석 오류: ' + e.message + '\n네트워크 상태나 API 키 설정을 확인하세요.');
+            showScr('main');
+            setStep(1);
         }
     }
 
     function updatePStep(id, status) {
         const el = document.getElementById(id);
         if (status === '진행 중') el.innerHTML += '<span class="sp"></span>';
-        else {
-            el.classList.add('dn');
-            el.innerHTML = '✅ ' + el.innerText.replace('진행 중', '');
-        }
+        else { el.classList.add('dn'); el.innerHTML = '✅ ' + el.innerText.replace('진행 중', ''); }
     }
 
     function showScr(id) {
@@ -292,9 +285,9 @@
     }
 
     function doQR() {
-        setStep(4);
-        showScr('qs');
+        setStep(4); showScr('qs');
         const url = `${DRBASE}?id=${pid}`;
+        document.getElementById('qrcode').innerHTML = "";
         new QRCode(document.getElementById('qrcode'), { text: url, width: 200, height: 200, colorDark: '#1a3a5c' });
         document.getElementById('rno').textContent = '접수 번호: ' + REC;
     }
