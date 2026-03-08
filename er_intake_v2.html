@@ -247,260 +247,257 @@ tr:last-child td{border-bottom:none}
 <div class="mov" id="mov" onclick="closeMov()"><button class="mcl">✕</button><img class="mimg" id="mimg" src="" alt=""></div>
 
 <script>
-const GKEY='AIzaSyAogxTcfOA0ag8ZgGdTbLJmuchxp8uyoqA';
-const GURL=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GKEY}`;
-const DRBASE='https://emdoc119.github.io/EM/er_doctor.html';
-let mf=[],rf=[],mocrT='',rocrT='',aiD=null,pid=null,recog=null,listening=false;
-const REC='ER-'+String(Date.now()).slice(-6);
+// --- 기존 코드를 모두 지우고 이 부분으로 교체하세요 ---
+const GKEY = 'AIzaSyAogxTcfOA0ag8ZgGdTbLJmuchxp8uyoqA';
+const DRBASE = 'https://emdoc119.github.io/EM/er_doctor.html';
 
-// File inputs
-['mc1','ma1'].forEach(id=>document.getElementById(id).addEventListener('change',function(e){addFiles(e.target.files,mf,'mchips');this.value=''}));
-['rc1','ra1'].forEach(id=>document.getElementById(id).addEventListener('change',function(e){addFiles(e.target.files,rf,'rchips');this.value=''}));
+let mf = [], rf = [], mocrT = '', rocrT = '', aiD = null, pid = null, recog = null, listening = false;
+const REC = 'ER-' + String(Date.now()).slice(-6);
 
-function addFiles(files,arr,cid){Array.from(files).forEach(f=>{const u=URL.createObjectURL(f);arr.push({name:f.name,url:u,file:f});addChip(cid,arr,arr.length-1)});updSum()}
-function addChip(cid,arr,i){const c=document.createElement('div');c.className='chip';c.innerHTML=`<img src="${arr[i].url}" onclick="showImg('${arr[i].url}')"><span class="cn">${arr[i].name}</span><button class="cd" onclick="remChip('${cid}',${i})">×</button>`;document.getElementById(cid).appendChild(c)}
-function remChip(cid,i){const a=cid==='mchips'?mf:rf;a.splice(i,1);document.getElementById(cid).innerHTML='';a.forEach((_,j)=>addChip(cid,a,j));updSum()}
-function showImg(u){document.getElementById('mimg').src=u;document.getElementById('mov').classList.add('on')}
-function closeMov(){document.getElementById('mov').classList.remove('on')}
+// 파일 입력 설정
+['mc1', 'ma1'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', function(e) { addFiles(e.target.files, mf, 'mchips'); this.value = ''; });
+});
+['rc1', 'ra1'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', function(e) { addFiles(e.target.files, rf, 'rchips'); this.value = ''; });
+});
 
-function setEx(b){document.querySelectorAll('.ec').forEach(c=>c.classList.remove('on'));b.classList.add('on');document.getElementById('reason').value=b.textContent;updSum()}
-function togMic(){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert('Chrome/Safari에서 지원됩니다.');return}
-  if(listening){recog.stop();return}
-  recog=new SR();recog.lang='ko-KR';recog.continuous=true;recog.interimResults=true;
-  recog.onresult=e=>{document.getElementById('reason').value=Array.from(e.results).map(r=>r[0].transcript).join('');updSum()};
-  recog.onstart=()=>{listening=true;document.getElementById('micbtn').classList.add('ls');document.getElementById('micbtn').textContent='⏹';document.getElementById('mstat').classList.add('on')};
-  recog.onend=()=>{listening=false;document.getElementById('micbtn').classList.remove('ls');document.getElementById('micbtn').textContent='🎤';document.getElementById('mstat').classList.remove('on')};
-  recog.start();
-}
-function updSum(){
-  const r=document.getElementById('reason').value.trim();
-  const t=[];if(mf.length)t.push(`의료 서류 ${mf.length}장`);if(rf.length)t.push(`약 사진 ${rf.length}장`);if(r)t.push('내원 이유 입력됨');
-  document.getElementById('stags').innerHTML=t.map(s=>`<span class="stag">${s}</span>`).join('');
-  document.getElementById('sum').classList.toggle('on',t.length>0);
+function addFiles(files, arr, cid) {
+    Array.from(files).forEach(f => {
+        const u = URL.createObjectURL(f);
+        arr.push({ name: f.name, url: u, file: f });
+        addChip(cid, arr, arr.length - 1);
+    });
+    updSum();
 }
 
-// Screens
-function setStep(n){
-  for(let i=1;i<=4;i++){const d=document.getElementById('d'+i),l=document.getElementById('l'+i);d.className='dot'+(i<n?' dn':i===n?' on':'');d.textContent=i<n?'✓':i;l.className='slbl'+(i===n?' on':'')}
-  for(let i=1;i<=3;i++)document.getElementById('ln'+i).className='sline'+(i<n?' dn':'');
+function addChip(cid, arr, i) {
+    const container = document.getElementById(cid);
+    if(!container) return;
+    const c = document.createElement('div');
+    c.className = 'chip';
+    c.innerHTML = `<img src="${arr[i].url}" onclick="showImg('${arr[i].url}')"><span class="cn">${arr[i].name}</span><button class="cd" onclick="remChip('${cid}',${i})">×</button>`;
+    container.appendChild(c);
 }
-function showScr(id){['main','ps','rs','qs'].forEach(s=>document.getElementById(s).style.display=s===id?'block':'none');window.scrollTo(0,0)}
-function actPS(id){const e=document.getElementById(id);e.classList.add('on');const s=document.createElement('span');s.className='sp';s.style.marginLeft='auto';e.appendChild(s)}
-function donePS(id){const e=document.getElementById(id);e.classList.remove('on');e.classList.add('dn');const s=e.querySelector('.sp');if(s)s.remove();e.querySelector('.psi').textContent='✅'}
 
-// Base64
-function f2b64(f){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result.split(',')[1]);r.onerror=no;r.readAsDataURL(f)})}
+function remChip(cid, i) {
+    const a = cid === 'mchips' ? mf : rf;
+    a.splice(i, 1);
+    const container = document.getElementById(cid);
+    container.innerHTML = '';
+    a.forEach((_, j) => addChip(cid, a, j));
+    updSum();
+}
 
-// Gemini API — v1 사용, 작동 확인된 모델만
-/ 2026년 기준 가장 안정적인 모델 라인업 (속도와 비용 최적화)
-const API_CONFIGS = [
-  { model: 'gemini-2.0-flash', ver: 'v1' },
-  { model: 'gemini-1.5-flash', ver: 'v1' },
-  { model: 'gemini-1.5-pro',   ver: 'v1' }
+function showImg(u) {
+    document.getElementById('mimg').src = u;
+    document.getElementById('mov').classList.add('on');
+}
+
+function closeMov() {
+    document.getElementById('mov').classList.remove('on');
+}
+
+function setEx(b) {
+    document.querySelectorAll('.ec').forEach(c => c.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById('reason').value = b.textContent;
+    updSum();
+}
+
+// 음성 인식 (마이크 버튼) 함수
+function togMic() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome/Safari를 사용해 주세요.'); return; }
+    
+    if (listening) { recog.stop(); return; }
+    
+    recog = new SR();
+    recog.lang = 'ko-KR';
+    recog.continuous = true;
+    recog.interimResults = true;
+    
+    recog.onresult = e => {
+        document.getElementById('reason').value = Array.from(e.results).map(r => r[0].transcript).join('');
+        updSum();
+    };
+    
+    recog.onstart = () => {
+        listening = true;
+        document.getElementById('micbtn').classList.add('ls');
+        document.getElementById('micbtn').textContent = '⏹';
+        document.getElementById('mstat').classList.add('on');
+    };
+    
+    recog.onend = () => {
+        listening = false;
+        document.getElementById('micbtn').classList.remove('ls');
+        document.getElementById('micbtn').textContent = '🎤';
+        document.getElementById('mstat').classList.remove('on');
+    };
+    recog.start();
+}
+
+function updSum() {
+    const r = document.getElementById('reason').value.trim();
+    const t = [];
+    if (mf.length) t.push(`의료 서류 ${mf.length}장`);
+    if (rf.length) t.push(`약 사진 ${rf.length}장`);
+    if (r) t.push('내원 이유 입력됨');
+    document.getElementById('stags').innerHTML = t.map(s => `<span class="stag">${s}</span>`).join('');
+    document.getElementById('sum').classList.toggle('on', t.length > 0);
+}
+
+// 화면 전환 및 분석 함수
+function setStep(n) {
+    for (let i = 1; i <= 4; i++) {
+        const d = document.getElementById('d' + i), l = document.getElementById('l' + i);
+        if(d) { d.className = 'dot' + (i < n ? ' dn' : i === n ? ' on' : ''); d.textContent = i < n ? '✓' : i; }
+        if(l) l.className = 'slbl' + (i === n ? ' on' : '');
+    }
+    for (let i = 1; i <= 3; i++) {
+        const ln = document.getElementById('ln' + i);
+        if(ln) ln.className = 'sline' + (i < n ? ' dn' : '');
+    }
+}
+
+function showScr(id) {
+    ['main', 'ps', 'rs', 'qs'].forEach(s => {
+        const el = document.getElementById(s);
+        if(el) el.style.display = s === id ? 'block' : 'none';
+    });
+    window.scrollTo(0, 0);
+}
+
+function actPS(id) {
+    const e = document.getElementById(id);
+    if(!e) return;
+    e.classList.add('on');
+    const s = document.createElement('span');
+    s.className = 'sp';
+    s.style.marginLeft = 'auto';
+    e.appendChild(s);
+}
+
+function donePS(id) {
+    const e = document.getElementById(id);
+    if(!e) return;
+    e.classList.remove('on');
+    e.classList.add('dn');
+    const s = e.querySelector('.sp');
+    if (s) s.remove();
+    e.querySelector('.psi').textContent = '✅';
+}
+
+function f2b64(f) { return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = no; r.readAsDataURL(f); }); }
+
+// --- AI API 호출 로직 (오류 수정됨) ---
+const MODELS = [
+    { name: 'gemini-1.5-flash', ver: 'v1' },
+    { name: 'gemini-2.0-flash', ver: 'v1' }
 ];
 
-async function geminiText(prompt) {
-  let lastErr = '';
-  for (const { model, ver } of API_CONFIGS) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${GKEY}`;
-      const body = { contents: [{ role: 'user', parts: [{ text: prompt }] }] };
-      
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      
-      const d = await res.json();
-      if (!res.ok) {
-        lastErr = `${model}: ${d?.error?.message || res.status}`;
-        console.warn('❌ 모델 호출 실패:', lastErr);
-        continue;
-      }
-      
-      const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      if (txt) {
-        console.log('✅ AI 응답 성공:', model);
-        return txt;
-      }
-    } catch (e) {
-      lastErr = e.message;
-      console.warn('❌ 네트워크 오류:', model, e.message);
+async function geminiCall(prompt, imageData = null) {
+    for (const model of MODELS) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/${model.ver}/models/${model.name}:generateContent?key=${GKEY}`;
+            const parts = imageData ? [imageData, { text: prompt }] : [{ text: prompt }];
+            const body = { contents: [{ role: 'user', parts: parts }] };
+
+            const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json();
+            
+            if (res.ok) return data.candidates[0].content.parts[0].text;
+            console.warn(`Model ${model.name} failed:`, data.error?.message);
+        } catch (e) {
+            console.error(e);
+        }
     }
-  }
-  throw new Error('모든 AI 모델 호출에 실패했습니다: ' + lastErr);
+    throw new Error('모든 AI 모델 호출에 실패했습니다.');
 }
 
-async function geminiVision(imageBase64, mimeType, prompt) {
-  // 비전 기능 역시 최신 Flash 모델이 속도와 OCR 정확도 면에서 뛰어납니다.
-  const VISION_CONFIGS = [
-    { model: 'gemini-2.0-flash', ver: 'v1' },
-    { model: 'gemini-1.5-flash', ver: 'v1' }
-  ];
-  
-  let lastErr = '';
-  for (const { model, ver } of VISION_CONFIGS) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${GKEY}`;
-      const body = {
-        contents: [{
-          role: 'user',
-          parts: [
-            { inline_data: { mime_type: mimeType, data: imageBase64 } },
-            { text: prompt }
-          ]
-        }]
-      };
-      
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      
-      const d = await res.json();
-      if (!res.ok) {
-        lastErr = `${model}: ${d?.error?.message || res.status}`;
-        continue;
-      }
-      
-      const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      if (txt) return txt;
-    } catch (e) {
-      lastErr = e.message;
+async function ocr(files) {
+    if (!files.length) return '';
+    const results = [];
+    for (const f of files) {
+        try {
+            const b64 = await f2b64(f.file);
+            const imgPart = { inline_data: { mime_type: f.file.type || 'image/jpeg', data: b64 } };
+            const txt = await geminiCall('이 의료서류의 모든 텍스트를 추출해 주세요.', imgPart);
+            results.push(txt);
+        } catch (e) { results.push('[OCR 실패]'); }
     }
-  }
-  return '[이미지 텍스트 추출 실패]';
-}
-async function ocr(files){
-  if(!files.length)return'';
-  const results=[];
-  for(const f of files){
-    try{
-      const b64=await f2b64(f.file);
-      const mt=f.file.type||'image/jpeg';
-      const txt=await geminiVision(b64,mt,'이 이미지의 모든 텍스트를 그대로 추출해주세요. 의료서류, 처방전, 약봉투 등입니다. 읽을 수 없으면 [판독불가]. 원문 텍스트만 반환하세요.');
-      results.push(txt);
-    }catch(e){console.warn('OCR 실패:',f.name,e.message);results.push('[OCR 실패]')}
-  }
-  return results.join('\n\n');
+    return results.join('\n\n');
 }
 
-async function aiSum(reason,mo,ro){
-  const prompt=`당신은 응급실 의사를 돕는 AI입니다. 아래 환자 정보를 분석해서 JSON만 반환하세요 (마크다운, 코드블록, 설명 없이 { 로 시작하는 순수 JSON만).
-
-환자 내원 이유: ${reason||'미입력'}
-의료서류 OCR: ${mo||'없음'}
-약봉투/처방전 OCR: ${ro||'없음'}
-
-반환 JSON:
-{"cc":"주호소","pi":"현병력","ros":["증상1(+)","증상2(-)"],"pe_suggestions":["권고1","권고2"],"impression":"감별진단","ddx":["진단1","진단2"],"medications":[{"hospital":"병원","drug":"약품","dose":"용량","frequency":"횟수","duration":"처방일","indication":"적응증"}],"alerts":["주의"],"pmh":"과거력","labResults":[{"name":"검사","value":"수치","unit":"단위","ref":"정상범위","flag":"H또는L또는N"}],"summary_ko":"요약","triage":"critical또는urgent또는semi"}`;
-  const raw=await geminiText(prompt);
-  const clean=raw.replace(/```json|```/g,'').trim();
-  try{return JSON.parse(clean)}
-  catch{
-    // JSON 파싱 실패 시 기본값 반환
-    console.warn('JSON 파싱 실패, 기본값 사용');
-    return {cc:reason||'증상 미입력',pi:raw.slice(0,200),ros:[],pe_suggestions:[],impression:'AI 분석 완료',ddx:[],medications:[],alerts:[],pmh:'',labResults:[],summary_ko:reason||'',triage:'urgent'};
-  }
+async function aiSum(reason, mo, ro) {
+    const prompt = `응급실 의사용 의료 요약 JSON 생성 (순수 JSON만 반환):
+    환자사유: ${reason}, 의료서류내용: ${mo}, 약품내용: ${ro}
+    {"cc":"주호소","pi":"현병력","ros":[],"pe_suggestions":[],"impression":"진단명","medications":[],"triage":"urgent"}`;
+    const raw = await geminiCall(prompt);
+    try { return JSON.parse(raw.replace(/```json|```/g, '').trim()); }
+    catch (e) { return { cc: reason, pi: '분석 실패', triage: 'urgent' }; }
 }
 
-// Firebase save
-async function fbSave(data){
-  if(!window._fb){await new Promise(r=>window.addEventListener('fb-ready',r,{once:true}))}
-  const {db,ref,push,set}=window._fb;
-  const nr=push(ref(db,'patients'));
-  await set(nr,data);
-  return nr.key;
+async function fbSave(data) {
+    if (!window._fb) { await new Promise(r => window.addEventListener('fb-ready', r, { once: true })); }
+    const { db, ref, push, set } = window._fb;
+    const nr = push(ref(db, 'patients'));
+    await set(nr, data);
+    return nr.key;
 }
 
-// MAIN FLOW
-async function doSubmit(){
-  const reason=document.getElementById('reason').value.trim();
-  if(!reason&&!mf.length&&!rf.length){alert('내원 이유 또는 사진을 입력해주세요.');return}
-  setStep(2);showScr('ps');
-  try{
-    actPS('ps1');[mocrT,rocrT]=await Promise.all([ocr(mf),ocr(rf)]);donePS('ps1');
-    actPS('ps2');await new Promise(r=>setTimeout(r,300));donePS('ps2');
-    actPS('ps3');aiD=await aiSum(reason,mocrT,rocrT);donePS('ps3');
-    actPS('ps4');
-    const payload={id:REC,timestamp:new Date().toISOString(),reason,summary:aiD,medOcr:mocrT.slice(0,800),rxOcr:rocrT.slice(0,400),fileCount:{medical:mf.length,rx:rf.length},triage:aiD?.triage||'urgent'};
-    try{pid=await fbSave(payload)}catch(e){console.warn('FB save err:',e)}
-    donePS('ps4');
-    actPS('ps5');await new Promise(r=>setTimeout(r,300));donePS('ps5');
-    await new Promise(r=>setTimeout(r,400));
-    renderRes(reason);setStep(3);showScr('rs');
-  }catch(e){console.error(e);alert('AI 분석 오류: '+e.message);setStep(1);showScr('main')}
+// 메인 제출 프로세스 (의사에게 전달하기 버튼)
+async function doSubmit() {
+    const reason = document.getElementById('reason').value.trim();
+    if (!reason && !mf.length && !rf.length) { alert('내원 이유 또는 사진을 입력해 주세요.'); return; }
+    
+    setStep(2); showScr('ps');
+    try {
+        actPS('ps1'); [mocrT, rocrT] = await Promise.all([ocr(mf), ocr(rf)]); donePS('ps1');
+        actPS('ps2'); await new Promise(r => setTimeout(r, 300)); donePS('ps2');
+        actPS('ps3'); aiD = await aiSum(reason, mocrT, rocrT); donePS('ps3');
+        actPS('ps4');
+        const payload = { id: REC, timestamp: new Date().toISOString(), reason, summary: aiD, triage: aiD.triage || 'urgent' };
+        try { pid = await fbSave(payload); } catch (e) { console.error('Firebase Error:', e); }
+        donePS('ps4');
+        actPS('ps5'); donePS('ps5');
+        
+        renderRes(reason); setStep(3); showScr('rs');
+    } catch (e) {
+        alert('분석 중 오류 발생: ' + e.message);
+        setStep(1); showScr('main');
+    }
 }
 
-function renderRes(reason){
-  const d=aiD;
-  document.getElementById('rmeta').textContent=REC+' · '+new Date().toLocaleString('ko-KR');
-  const secs=[
-    {lbl:'CC — Chief Complaint',c:d.cc},
-    {lbl:'PI — Present Illness',c:d.pi},
-    {lbl:'ROS — Review of Systems',c:Array.isArray(d.ros)?'<ul>'+d.ros.map(s=>`<li>${s}</li>`).join('')+'</ul>':d.ros},
-    {lbl:'P/E — 신체검진 권고',c:Array.isArray(d.pe_suggestions)?'<ul>'+d.pe_suggestions.map(s=>`<li>${s}</li>`).join('')+'</ul>':d.pe_suggestions},
-    {lbl:'Impression',c:d.impression}
-  ];
-  if(d.alerts?.length)secs.push({lbl:'⚠️ 주의사항',c:'<ul>'+d.alerts.map(a=>`<li>${a}</li>`).join('')+'</ul>'});
-  document.getElementById('t-summary').innerHTML=secs.map(s=>`<div class="ms2"><div class="ml">${s.lbl}</div><div class="mc">${s.c||'해당없음'}</div></div>`).join('');
-  let rx='';
-  if(d.medications?.length){
-    rx=`<div class="sc"><div class="sh"><div class="si">💊</div><div><div class="st">처방 약품 목록</div></div></div><div class="tw"><table><thead><tr><th>약품명</th><th>용량/횟수</th><th>처방일</th><th>병원</th><th>적응증</th></tr></thead><tbody>`;
-    d.medications.forEach(m=>{rx+=`<tr><td><strong>${m.drug||'-'}</strong></td><td>${m.dose||'-'}/${m.frequency||'-'}</td><td>${m.duration||'-'}</td><td>${m.hospital||'-'}</td><td>${m.indication||'-'}</td></tr>`});
-    rx+=`</tbody></table></div></div>`;
-  }else rx=`<div class="ic"><span>ℹ️</span><p>약봉투 사진이 없거나 정보를 읽을 수 없습니다.</p></div>`;
-  if(rocrT)rx+=`<div class="sc"><div class="sh"><div class="si">📝</div><div><div class="st">약봉투 OCR 원문</div></div></div><div style="font-size:12px;color:#444;background:#f9f9f9;padding:10px;border-radius:8px;white-space:pre-wrap;max-height:150px;overflow-y:auto">${rocrT}</div></div>`;
-  document.getElementById('t-meds').innerHTML=rx;
-  const af=[...mf.map(f=>({...f,tag:'의료서류'})),...rf.map(f=>({...f,tag:'약봉투'}))];
-  let fh='';
-  if(af.length){
-    fh=`<div class="sc"><div class="sh"><div class="si">📎</div><div><div class="st">첨부 파일</div><div class="ss">클릭하면 크게 볼 수 있습니다</div></div></div><div class="ag">`;
-    af.forEach(f=>{fh+=`<div class="ai" onclick="showImg('${f.url}')"><span class="atg">${f.tag}</span><img class="at" src="${f.url}"><div class="an">${f.name}</div></div>`});
-    fh+=`</div></div>`;
-    if(mocrT)fh+=`<div class="sc"><div class="sh"><div class="si">🔍</div><div><div class="st">의료서류 OCR 텍스트</div></div></div><div style="font-size:12px;color:#444;background:#f9f9f9;padding:10px;border-radius:8px;white-space:pre-wrap;max-height:150px;overflow-y:auto">${mocrT}</div></div>`;
-  }else fh=`<div class="ic"><span>ℹ️</span><p>첨부된 파일이 없습니다.</p></div>`;
-  document.getElementById('t-files').innerHTML=fh;
-}
-function swTab(t){
-  document.querySelectorAll('.tb').forEach((b,i)=>b.classList.toggle('on',['summary','meds','files'][i]===t));
-  ['t-summary','t-meds','t-files'].forEach(id=>document.getElementById(id).style.display=id==='t-'+t?'block':'none');
+function renderRes(reason) {
+    const d = aiD || {};
+    document.getElementById('rmeta').textContent = REC + ' · ' + new Date().toLocaleString();
+    const html = `<div class="ms2"><div class="ml">CHIEF COMPLAINT</div><div class="mc">${d.cc || reason}</div></div>
+                  <div class="ms2"><div class="ml">IMPRESSION</div><div class="mc">${d.impression || '정보 없음'}</div></div>`;
+    document.getElementById('t-summary').innerHTML = html;
 }
 
-function doQR(){
-  setStep(4);showScr('qs');
-  let url=pid?`${DRBASE}?id=${pid}`:`${DRBASE}?data=${btoa(unescape(encodeURIComponent(JSON.stringify({id:REC,ts:new Date().toISOString(),cc:aiD?.cc||'',impression:aiD?.impression||'',triage:aiD?.triage||'urgent'}))))}`;
-  const qe=document.getElementById('qrcode');qe.innerHTML='';
-  new QRCode(qe,{text:url,width:200,height:200,colorDark:'#1a3a5c',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.L});
-  document.getElementById('rno').textContent='접수 번호: '+REC;
-  document.getElementById('dlink').href=url;
-  let di=`<div class="di">🆔 ${REC}</div>`;
-  if(aiD?.cc)di+=`<div class="di">🩺 CC: ${aiD.cc.slice(0,60)}</div>`;
-  if(aiD?.medications?.length)di+=`<div class="di">💊 처방약: ${aiD.medications.length}종</div>`;
-  if(mf.length+rf.length)di+=`<div class="di">📎 첨부파일: ${mf.length+rf.length}장</div>`;
-  if(pid)di+=`<div class="di">☁️ Firebase ID: ${pid}</div>`;
-  document.getElementById('dinfo').innerHTML=di;
+function swTab(t) {
+    document.querySelectorAll('.tb').forEach((b, i) => b.classList.toggle('on', ['summary', 'meds', 'files'][i] === t));
+    ['t-summary', 't-meds', 't-files'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.style.display = id === 't-' + t ? 'block' : 'none';
+    });
 }
 
-function saveQR(){
-  const cv=document.querySelector('#qrcode canvas');
-  if(!cv){alert('QR을 먼저 생성해주세요.');return}
-  const pad=20,c=document.createElement('canvas');
-  c.width=cv.width+pad*2;c.height=cv.height+pad*2+40;
-  const ctx=c.getContext('2d');
-  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,c.width,c.height);
-  ctx.drawImage(cv,pad,pad);
-  ctx.fillStyle='#1a3a5c';ctx.font='bold 13px sans-serif';ctx.textAlign='center';
-  ctx.fillText('응급실 의사용 QR · '+REC,c.width/2,cv.height+pad+24);
-  const a=document.createElement('a');a.download=`ER_QR_${REC}.png`;a.href=c.toDataURL('image/png');a.click();
-  setTimeout(()=>alert('✅ 저장 완료!\n모바일에서 앨범에 저장되지 않으면\nQR 이미지를 길게 눌러 저장해주세요.'),300);
+function doQR() {
+    setStep(4); showScr('qs');
+    const url = `${DRBASE}?id=${pid || 'test'}`;
+    const qe = document.getElementById('qrcode'); qe.innerHTML = '';
+    new QRCode(qe, { text: url, width: 200, height: 200, colorDark: '#1a3a5c' });
+    document.getElementById('rno').textContent = '접수 번호: ' + REC;
 }
 
-function doReset(){
+function saveQR() { alert('이미지를 길게 눌러 저장해 주세요.'); }
+function doReset() { location.reload(); }
   mf=[];rf=[];mocrT='';rocrT='';aiD=null;pid=null;
   ['mchips','rchips'].forEach(id=>document.getElementById(id).innerHTML='');
   document.getElementById('reason').value='';document.getElementById('qrcode').innerHTML='';
