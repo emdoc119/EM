@@ -293,7 +293,7 @@ function f2b64(f){return new Promise((ok,no)=>{const r=new FileReader();r.onload
 
 // ── Gemini Proxy 호출 ──────────────────────────────
 // API 키는 Cloudflare Worker에 숨겨져 있어 노출 안 됨
-const PROXY_URL = 'https://er-gemini-proxy.emdoc119.workers.dev';
+const PROXY_URL = 'https://er-gemini-proxy.mrchoo21.workers.dev';
 
 async function callProxy(contents, model='gemini-2.0-flash-exp'){
   const res = await fetch(PROXY_URL, {
