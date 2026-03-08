@@ -5,725 +5,401 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>응급실 의사 뷰</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const firebaseConfig = {
+  apiKey:"AIzaSyBVG_OjJOFQjyg849-A4b7rXvrZbIeouAQ",
+  authDomain:"er-ktas-app.firebaseapp.com",
+  databaseURL:"https://er-ktas-app-default-rtdb.firebaseio.com",
+  projectId:"er-ktas-app",
+  storageBucket:"er-ktas-app.firebasestorage.app",
+  messagingSenderId:"705354123132",
+  appId:"1:705354123132:web:0ee004e5ae91f9f1a546f9"
+};
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+window._fb2={db,ref,get};
+window.dispatchEvent(new Event('fb2-ready'));
+</script>
+<!-- QR Scanner -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-:root {
-  --bg: #0d1117;
-  --surface: #161b22;
-  --surface2: #1c2330;
-  --border: #30363d;
-  --text: #e6edf3;
-  --sub: #7d8590;
-  --blue: #58a6ff;
-  --blue-bg: #1c2d3f;
-  --green: #3fb950;
-  --green-bg: #112d21;
-  --red: #f85149;
-  --red-bg: #2d1b1b;
-  --orange: #d29922;
-  --orange-bg: #2d2108;
-  --yellow: #e3b341;
-  --purple: #bc8cff;
-  --purple-bg: #1e1535;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: 'Noto Sans KR', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  padding-bottom: 80px;
-}
-
-/* ── HEADER ── */
-.header {
-  background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 18px;
-  display: flex; align-items: center; gap: 12px;
-  position: sticky; top: 0; z-index: 100;
-  backdrop-filter: blur(10px);
-}
-.header-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
-.status-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--red); flex-shrink: 0;
-  box-shadow: 0 0 8px var(--red);
-  animation: pulse-red 1.5s ease-in-out infinite;
-}
-.header-title { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
-.header-sub { font-size: 11px; color: var(--sub); margin-top: 1px; }
-.header-time { font-size: 12px; color: var(--sub); font-weight: 500; flex-shrink: 0; }
-.er-badge {
-  background: var(--red-bg); color: var(--red);
-  border: 1px solid rgba(248,81,73,0.3);
-  font-size: 10px; font-weight: 800;
-  padding: 3px 9px; border-radius: 6px;
-  letter-spacing: 1px; flex-shrink: 0;
-}
-
-/* ── CONTAINER ── */
-.container { max-width: 520px; margin: 0 auto; padding: 16px 14px 0; }
-
-/* ── TRIAGE BANNER ── */
-.triage-banner {
-  border-radius: 14px; padding: 16px 18px; margin-bottom: 14px;
-  border: 1px solid; display: flex; align-items: center; gap: 14px;
-  animation: slideIn 0.4s ease;
-}
-.triage-banner.critical { background: var(--red-bg); border-color: rgba(248,81,73,0.4); }
-.triage-banner.urgent { background: var(--orange-bg); border-color: rgba(210,153,34,0.4); }
-.triage-banner.semi { background: var(--blue-bg); border-color: rgba(88,166,255,0.3); }
-.triage-icon { font-size: 28px; flex-shrink: 0; }
-.triage-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 3px; }
-.triage-banner.critical .triage-label { color: var(--red); }
-.triage-banner.urgent .triage-label { color: var(--orange); }
-.triage-banner.semi .triage-label { color: var(--blue); }
-.triage-cc { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.4; }
-
-/* ── SECTION CARDS ── */
-.card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 14px; padding: 16px; margin-bottom: 12px;
-  animation: slideIn 0.4s ease;
-}
-.card-header {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 13px;
-  padding-bottom: 11px; border-bottom: 1px solid var(--border);
-}
-.card-icon {
-  width: 34px; height: 34px; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
-}
-.card-icon.blue { background: var(--blue-bg); }
-.card-icon.green { background: var(--green-bg); }
-.card-icon.red { background: var(--red-bg); }
-.card-icon.orange { background: var(--orange-bg); }
-.card-icon.purple { background: var(--purple-bg); }
-.card-title { font-size: 13px; font-weight: 800; color: var(--text); letter-spacing: 0.3px; }
-.card-sub { font-size: 11px; color: var(--sub); margin-top: 1px; }
-.card-badge {
-  margin-left: auto; font-size: 10px; font-weight: 700;
-  padding: 3px 8px; border-radius: 6px;
-}
-.badge-red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
-.badge-green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
-.badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); }
-.badge-orange { background: var(--orange-bg); color: var(--orange); border: 1px solid rgba(210,153,34,0.3); }
-
-/* ── FIELD ROWS ── */
-.field { margin-bottom: 12px; }
-.field:last-child { margin-bottom: 0; }
-.field-label {
-  font-size: 10px; font-weight: 800; color: var(--sub);
-  letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 5px;
-}
-.field-value {
-  font-size: 14px; color: var(--text); line-height: 1.7;
-  background: var(--surface2); border-radius: 9px;
-  padding: 10px 13px; border: 1px solid var(--border);
-}
-
-/* ── ROS CHIPS ── */
-.ros-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-.ros-chip {
-  font-size: 12.5px; padding: 5px 12px; border-radius: 20px;
-  font-weight: 600; border: 1px solid;
-}
-.ros-chip.positive { background: rgba(248,81,73,0.12); color: #ff7b72; border-color: rgba(248,81,73,0.3); }
-.ros-chip.negative { background: var(--surface2); color: var(--sub); border-color: var(--border); }
-
-/* ── LAB VALUES ── */
-.lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.lab-item {
-  background: var(--surface2); border-radius: 10px;
-  padding: 11px 13px; border: 1px solid var(--border);
-  transition: all 0.15s;
-}
-.lab-item.high { background: rgba(248,81,73,0.08); border-color: rgba(248,81,73,0.35); }
-.lab-item.low { background: rgba(88,166,255,0.08); border-color: rgba(88,166,255,0.35); }
-.lab-item.normal { opacity: 0.7; }
-.lab-name { font-size: 11px; color: var(--sub); font-weight: 600; margin-bottom: 4px; }
-.lab-val { font-size: 18px; font-weight: 800; line-height: 1; margin-bottom: 3px; }
-.lab-item.high .lab-val { color: var(--red); }
-.lab-item.low .lab-val { color: var(--blue); }
-.lab-item.normal .lab-val { color: var(--text); }
-.lab-ref { font-size: 10px; color: var(--sub); }
-.lab-flag {
-  display: inline-block; font-size: 9px; font-weight: 900;
-  padding: 1px 5px; border-radius: 4px; margin-left: 4px; vertical-align: middle;
-}
-.flag-h { background: var(--red); color: #fff; }
-.flag-l { background: var(--blue); color: #fff; }
-
-/* ── MEDICATION TABLE ── */
-.med-table-wrap { overflow-x: auto; margin: -4px -4px 0; }
-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 360px; }
-thead th {
-  background: var(--surface2); color: var(--sub);
-  padding: 9px 10px; text-align: left; font-size: 10px;
-  font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
-  border-bottom: 1px solid var(--border);
-}
-tbody td {
-  padding: 9px 10px; border-bottom: 1px solid rgba(48,54,61,0.6);
-  color: var(--text); vertical-align: top; line-height: 1.5;
-}
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: rgba(88,166,255,0.04); }
-.drug-name { font-weight: 700; color: var(--text); }
-.drug-dose { font-size: 11.5px; color: var(--sub); margin-top: 2px; }
-.indication-tag {
-  display: inline-block; font-size: 10px; font-weight: 700;
-  background: var(--purple-bg); color: var(--purple);
-  border: 1px solid rgba(188,140,255,0.25);
-  padding: 2px 7px; border-radius: 5px;
-}
-
-/* ── IMPRESSION ── */
-.impression-box {
-  background: linear-gradient(135deg, rgba(63,185,80,0.08), rgba(63,185,80,0.04));
-  border: 1px solid rgba(63,185,80,0.3);
-  border-radius: 11px; padding: 14px 15px;
-}
-.impression-text {
-  font-size: 15px; font-weight: 700; color: #7ee787; line-height: 1.65;
-}
-.ddx-list { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(63,185,80,0.2); }
-.ddx-label { font-size: 10px; font-weight: 800; color: var(--sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 7px; }
-.ddx-item {
-  display: flex; align-items: center; gap: 9px;
-  font-size: 13px; color: var(--text); margin-bottom: 5px;
-}
-.ddx-num {
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--green-bg); color: var(--green);
-  font-size: 10px; font-weight: 800; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid rgba(63,185,80,0.3);
-}
-
-/* ── ALERT BOX ── */
-.alert-box {
-  background: rgba(210,153,34,0.08); border: 1px solid rgba(210,153,34,0.3);
-  border-radius: 11px; padding: 12px 14px; margin-bottom: 10px;
-  display: flex; gap: 10px; align-items: flex-start;
-}
-.alert-text { font-size: 13px; color: var(--yellow); line-height: 1.6; font-weight: 600; }
-
-/* ── ATTACHMENTS ── */
-.attach-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
-.attach-scroll::-webkit-scrollbar { height: 4px; }
-.attach-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.attach-thumb-wrap {
-  flex-shrink: 0; width: 100px; cursor: pointer;
-  border-radius: 10px; overflow: hidden;
-  border: 1px solid var(--border); transition: all 0.15s;
-  background: var(--surface2);
-}
-.attach-thumb-wrap:active { opacity: 0.8; transform: scale(0.96); }
-.attach-thumb-img { width: 100%; height: 80px; object-fit: cover; display: block; }
-.attach-thumb-label {
-  padding: 5px 7px; font-size: 10px; color: var(--sub);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.attach-tag-sm {
-  font-size: 9px; font-weight: 700;
-  padding: 1px 6px; border-radius: 4px; margin-bottom: 3px; display: inline-block;
-}
-.attach-tag-sm.doc { background: var(--blue-bg); color: var(--blue); }
-.attach-tag-sm.rx { background: var(--green-bg); color: var(--green); }
-
-/* ── OCR TEXT PREVIEW ── */
-.ocr-preview {
-  font-size: 11.5px; color: var(--sub); line-height: 1.7;
-  background: var(--bg); border-radius: 8px; padding: 10px 12px;
-  max-height: 110px; overflow-y: auto; white-space: pre-wrap;
-  border: 1px solid var(--border); margin-top: 10px;
-}
-.ocr-preview::-webkit-scrollbar { width: 4px; }
-.ocr-preview::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-/* ── ACTIONS ── */
-.action-row { display: flex; gap: 10px; margin-bottom: 12px; }
-.action-btn {
-  flex: 1; padding: 13px 8px; border-radius: 12px; border: none;
-  font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  transition: all 0.15s; letter-spacing: -0.2px;
-}
-.action-btn:active { transform: scale(0.96); }
-.action-btn .btn-icon { font-size: 20px; }
-.btn-primary { background: var(--blue); color: #0d1117; }
-.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
-
-/* ── META INFO ── */
-.meta-row {
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 11px; color: var(--sub); padding: 10px 2px;
-  border-top: 1px solid var(--border); margin-top: 10px;
-}
-
-/* ── MODAL ── */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-  z-index: 999; display: none; align-items: center; justify-content: center;
-  padding: 20px; flex-direction: column; gap: 12px;
-}
-.modal-overlay.show { display: flex; }
-.modal-img { max-width: 100%; max-height: 75vh; border-radius: 12px; object-fit: contain; }
-.modal-close {
-  position: absolute; top: 16px; right: 16px; width: 36px; height: 36px;
-  background: rgba(255,255,255,0.1); border: none; color: #fff;
-  font-size: 18px; border-radius: 50%; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
-.modal-label { font-size: 12px; color: rgba(255,255,255,0.5); text-align: center; }
-
-/* ── DEMO MODE BANNER ── */
-.demo-banner {
-  background: rgba(188,140,255,0.08); border: 1px solid rgba(188,140,255,0.25);
-  border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
-  display: flex; gap: 10px; align-items: flex-start;
-}
-.demo-text { font-size: 12.5px; color: var(--purple); line-height: 1.6; }
-
-/* ── EMPTY STATE ── */
-.empty-state {
-  text-align: center; padding: 60px 20px;
-  animation: slideIn 0.4s ease;
-}
-.empty-icon { font-size: 56px; margin-bottom: 16px; }
-.empty-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-.empty-sub { font-size: 14px; color: var(--sub); line-height: 1.7; margin-bottom: 28px; }
-.load-btn {
-  background: var(--blue); color: #0d1117; border: none;
-  padding: 14px 28px; border-radius: 12px;
-  font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
-}
-
-/* ── ANIMATIONS ── */
-@keyframes slideIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-@keyframes pulse-red { 0%,100%{box-shadow:0 0 6px var(--red)} 50%{box-shadow:0 0 14px var(--red)} }
-@keyframes spin { to { transform: rotate(360deg); } }
+:root{--bg:#0d1117;--sf:#161b22;--sf2:#1c2330;--bd:#30363d;--tx:#e6edf3;--sub:#7d8590;--blue:#58a6ff;--bbg:#1c2d3f;--green:#3fb950;--gbg:#112d21;--red:#f85149;--rbg:#2d1b1b;--orange:#d29922;--obg:#2d2108;--yellow:#e3b341;--purple:#bc8cff;--pbg:#1e1535}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding-bottom:80px}
+.hdr{background:linear-gradient(135deg,#0d1117,#161b22);border-bottom:1px solid var(--bd);padding:14px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.sdot{width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);animation:pr 1.5s infinite}
+.ht{font-size:15px;font-weight:800;color:var(--tx)}
+.hs{font-size:11px;color:var(--sub);margin-top:1px}
+.htime{font-size:12px;color:var(--sub);margin-left:auto}
+.drbadge{background:var(--rbg);color:var(--red);border:1px solid rgba(248,81,73,.3);font-size:10px;font-weight:800;padding:3px 9px;border-radius:6px;letter-spacing:1px}
+.wrap{max-width:520px;margin:0 auto;padding:16px 14px 0}
+/* QR SCAN PANEL */
+.scan-panel{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:20px;margin-bottom:16px;text-align:center}
+.scan-title{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:8px}
+.scan-sub{font-size:13px;color:var(--sub);margin-bottom:16px;line-height:1.6}
+#reader{border-radius:12px;overflow:hidden;margin:0 auto;max-width:280px}
+.scan-btn{background:var(--blue);color:#0d1117;border:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;margin-top:12px}
+.scan-btn:active{transform:scale(.97)}
+.scan-stop{background:var(--rbg);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+.demo-btn{background:var(--sf2);color:var(--sub);border:1px solid var(--bd);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;width:100%}
+/* TRIAGE */
+.tri{border-radius:14px;padding:16px 18px;margin-bottom:14px;border:1px solid;display:flex;align-items:center;gap:14px;animation:si .4s}
+.tri.cr{background:var(--rbg);border-color:rgba(248,81,73,.4)}
+.tri.ur{background:var(--obg);border-color:rgba(210,153,34,.4)}
+.tri.se{background:var(--bbg);border-color:rgba(88,166,255,.3)}
+.til{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
+.tri.cr .til{color:var(--red)}
+.tri.ur .til{color:var(--orange)}
+.tri.se .til{color:var(--blue)}
+.ticc{font-size:16px;font-weight:700;color:var(--tx);line-height:1.4}
+/* ACTIONS */
+.ar{display:flex;gap:10px;margin-bottom:14px}
+.ab{flex:1;padding:13px 8px;border-radius:12px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s}
+.ab:active{transform:scale(.96)}
+.ab .bi{font-size:20px}
+.ap{background:var(--blue);color:#0d1117}
+.as{background:var(--sf2);color:var(--tx);border:1px solid var(--bd)}
+.ad{background:var(--rbg);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+/* CARD */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:12px;animation:si .4s}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:13px;padding-bottom:11px;border-bottom:1px solid var(--bd)}
+.ci{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.ci.bl{background:var(--bbg)}
+.ci.gr{background:var(--gbg)}
+.ci.rd{background:var(--rbg)}
+.ci.or{background:var(--obg)}
+.ctit{font-size:13px;font-weight:800;color:var(--tx)}
+.csub{font-size:11px;color:var(--sub);margin-top:1px}
+.cbdg{margin-left:auto;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px}
+.br{background:var(--rbg);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+.bg{background:var(--gbg);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.bb{background:var(--bbg);color:var(--blue);border:1px solid rgba(88,166,255,.3)}
+/* FIELDS */
+.fl{margin-bottom:12px}
+.flb{font-size:10px;font-weight:800;color:var(--sub);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:5px}
+.flv{font-size:14px;color:var(--tx);line-height:1.7;background:var(--sf2);border-radius:9px;padding:10px 13px;border:1px solid var(--bd)}
+/* ROS CHIPS */
+.ros{display:flex;flex-wrap:wrap;gap:7px}
+.rch{font-size:12.5px;padding:5px 12px;border-radius:20px;font-weight:600;border:1px solid}
+.rp{background:rgba(248,81,73,.12);color:#ff7b72;border-color:rgba(248,81,73,.3)}
+.rn{background:var(--sf2);color:var(--sub);border-color:var(--bd)}
+/* LAB */
+.lg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.li{background:var(--sf2);border-radius:10px;padding:11px 13px;border:1px solid var(--bd)}
+.li.hi{background:rgba(248,81,73,.08);border-color:rgba(248,81,73,.35)}
+.li.lo{background:rgba(88,166,255,.08);border-color:rgba(88,166,255,.35)}
+.li.nm{opacity:.7}
+.ln{font-size:11px;color:var(--sub);font-weight:600;margin-bottom:4px}
+.lv{font-size:18px;font-weight:800;line-height:1;margin-bottom:3px}
+.li.hi .lv{color:var(--red)}
+.li.lo .lv{color:var(--blue)}
+.li.nm .lv{color:var(--tx)}
+.lr{font-size:10px;color:var(--sub)}
+.lf{display:inline-block;font-size:9px;font-weight:900;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle}
+.fh{background:var(--red);color:#fff}
+.fl2{background:var(--blue);color:#fff}
+/* MED TABLE */
+.tw{overflow-x:auto;margin:-4px -4px 0}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:340px}
+thead th{background:var(--sf2);color:var(--sub);padding:9px 10px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;border-bottom:1px solid var(--bd)}
+tbody td{padding:9px 10px;border-bottom:1px solid rgba(48,54,61,.6);color:var(--tx);vertical-align:top;line-height:1.5}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(88,166,255,.04)}
+.dn{font-weight:700}
+.ds{font-size:11.5px;color:var(--sub);margin-top:2px}
+.itag{display:inline-block;font-size:10px;font-weight:700;background:var(--pbg);color:var(--purple);border:1px solid rgba(188,140,255,.25);padding:2px 7px;border-radius:5px}
+/* IMPRESSION */
+.imbox{background:linear-gradient(135deg,rgba(63,185,80,.08),rgba(63,185,80,.04));border:1px solid rgba(63,185,80,.3);border-radius:11px;padding:14px 15px}
+.imt{font-size:15px;font-weight:700;color:#7ee787;line-height:1.65}
+.ddxl{margin-top:10px;padding-top:10px;border-top:1px solid rgba(63,185,80,.2)}
+.ddxlb{font-size:10px;font-weight:800;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px}
+.ddxi{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--tx);margin-bottom:5px}
+.ddxn{width:20px;height:20px;border-radius:50%;background:var(--gbg);color:var(--green);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:1px solid rgba(63,185,80,.3)}
+/* ALERT */
+.abox{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);border-radius:11px;padding:12px 14px;margin-bottom:10px;display:flex;gap:10px}
+.atxt{font-size:13px;color:var(--yellow);line-height:1.6;font-weight:600}
+/* ATTACH */
+.ascr{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.ascr::-webkit-scrollbar{height:4px}
+.ascr::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+.ath{flex-shrink:0;width:100px;cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--bd);background:var(--sf2)}
+.ath:active{opacity:.8;transform:scale(.96)}
+.athi{width:100%;height:80px;object-fit:cover;display:block}
+.athl{padding:5px 7px;font-size:10px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atgs{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;margin-bottom:3px;display:inline-block}
+.atgs.dc{background:var(--bbg);color:var(--blue)}
+.atgs.rx{background:var(--gbg);color:var(--green)}
+.ocrprev{font-size:11.5px;color:var(--sub);line-height:1.7;background:var(--bg);border-radius:8px;padding:10px 12px;max-height:110px;overflow-y:auto;white-space:pre-wrap;border:1px solid var(--bd);margin-top:10px}
+/* META */
+.meta{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--sub);padding:10px 2px;border-top:1px solid var(--bd);margin-top:10px}
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:999;display:none;align-items:center;justify-content:center;padding:20px;flex-direction:column;gap:12px}
+.mov.on{display:flex}
+.mimg{max-width:100%;max-height:75vh;border-radius:12px}
+.mcl{position:absolute;top:16px;right:16px;width:36px;height:36px;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+/* LOADING */
+.loading{text-align:center;padding:60px 20px}
+.licon{font-size:48px;animation:bo 1s infinite;margin-bottom:16px}
+.ltxt{font-size:16px;color:var(--sub)}
+@keyframes si{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pr{0%,100%{box-shadow:0 0 6px var(--red)}50%{box-shadow:0 0 14px var(--red)}}
+@keyframes bo{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left">
-    <div class="status-dot"></div>
-    <div>
-      <div class="header-title">응급실 환자 리포트</div>
-      <div class="header-sub" id="header-meta">의사 전용 뷰</div>
-    </div>
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+    <div class="sdot"></div>
+    <div><div class="ht">응급실 환자 리포트</div><div class="hs" id="hmeta">의사 전용 뷰</div></div>
   </div>
-  <div class="header-time" id="header-time"></div>
-  <div class="er-badge">DR</div>
+  <div class="htime" id="htime"></div>
+  <div class="drbadge">DR</div>
 </div>
 
-<div class="container">
-  <!-- EMPTY STATE (기본 표시) -->
-  <div id="empty-state" class="empty-state">
-    <div class="empty-icon">📱</div>
-    <div class="empty-title">QR 스캔 대기 중</div>
-    <div class="empty-sub">환자의 QR 코드를 스캔하면<br>이 화면에 의료 요약이 표시됩니다.<br><br>또는 아래 버튼으로 샘플 데이터를 불러올 수 있습니다.</div>
-    <button class="load-btn" onclick="loadDemo()">🧪 샘플 환자 데이터 불러오기</button>
+<div class="wrap">
+
+  <!-- QR 스캔 패널 -->
+  <div class="scan-panel" id="scan-panel">
+    <div class="scan-title">📱 환자 QR 스캔</div>
+    <div class="scan-sub">환자가 보여주는 QR 코드를 카메라로 스캔하거나<br>아래 샘플 데이터로 테스트해 보세요</div>
+    <div id="reader"></div>
+    <button class="scan-btn" id="scan-btn" onclick="startScan()">📷 QR 스캔 시작</button>
+    <br>
+    <button class="demo-btn" onclick="loadDemo()">🧪 샘플 환자 데이터 보기</button>
   </div>
 
-  <!-- REPORT (데이터 로드 후 표시) -->
+  <!-- 로딩 -->
+  <div class="loading" id="loading" style="display:none">
+    <div class="licon">🔍</div>
+    <div class="ltxt">환자 데이터 불러오는 중...</div>
+  </div>
+
+  <!-- 리포트 -->
   <div id="report" style="display:none">
-
-    <!-- DEMO BANNER -->
-    <div class="demo-banner" id="demo-banner" style="display:none">
-      <span style="font-size:18px;flex-shrink:0">🧪</span>
-      <div class="demo-text"><strong>샘플 데이터</strong> · 실제 QR 스캔 시 환자 정보가 여기 표시됩니다. 실제 운용 시 QR → URL 파라미터 또는 서버 연동 필요.</div>
+    <div id="alerts-sec"></div>
+    <div class="tri" id="tri"><div style="font-size:28px" id="tiicon">🔴</div><div><div class="til" id="tilbl">CRITICAL</div><div class="ticc" id="ticc"></div></div></div>
+    <div class="ar">
+      <button class="ab ap" onclick="alert('오더 시스템 연동 필요')"><span class="bi">📋</span><span>오더</span></button>
+      <button class="ab as" onclick="scrollTo2('lab')"><span class="bi">🧪</span><span>검사결과</span></button>
+      <button class="ab ad" onclick="scrollTo2('imp')"><span class="bi">⚠️</span><span>Impression</span></button>
+      <button class="ab as" onclick="document.getElementById('scan-panel').scrollIntoView({behavior:'smooth'})"><span class="bi">📱</span><span>재스캔</span></button>
     </div>
-
-    <!-- TRIAGE BANNER -->
-    <div class="triage-banner" id="triage-banner">
-      <div class="triage-icon" id="triage-icon">🔴</div>
-      <div>
-        <div class="triage-label" id="triage-label">CRITICAL</div>
-        <div class="triage-cc" id="triage-cc"></div>
-      </div>
-    </div>
-
-    <!-- QUICK ACTIONS -->
-    <div class="action-row">
-      <button class="action-btn btn-primary" onclick="alert('오더 시스템 연동 필요')">
-        <span class="btn-icon">📋</span><span>오더 작성</span>
-      </button>
-      <button class="action-btn btn-secondary" onclick="scrollToSection('lab-section')">
-        <span class="btn-icon">🧪</span><span>검사결과</span>
-      </button>
-      <button class="action-btn btn-danger" onclick="scrollToSection('impression-section')">
-        <span class="btn-icon">⚠️</span><span>Impression</span>
-      </button>
-    </div>
-
-    <!-- ALERTS -->
-    <div id="alerts-section"></div>
-
-    <!-- CC + PI -->
+    <!-- CC & PI -->
     <div class="card">
-      <div class="card-header">
-        <div class="card-icon blue">🩺</div>
-        <div>
-          <div class="card-title">CC &amp; PI</div>
-          <div class="card-sub">Chief Complaint · Present Illness</div>
-        </div>
-        <span class="card-badge badge-blue" id="cc-time-badge"></span>
-      </div>
-      <div class="field">
-        <div class="field-label">Chief Complaint</div>
-        <div class="field-value" id="f-cc" style="font-size:15px;font-weight:700;color:#58a6ff"></div>
-      </div>
-      <div class="field">
-        <div class="field-label">Present Illness</div>
-        <div class="field-value" id="f-pi"></div>
-      </div>
+      <div class="ch"><div class="ci bl">🩺</div><div><div class="ctit">CC &amp; PI</div><div class="csub">Chief Complaint · Present Illness</div></div><span class="cbdg bb" id="cctime"></span></div>
+      <div class="fl"><div class="flb">Chief Complaint</div><div class="flv" id="fcc" style="font-size:15px;font-weight:700;color:#58a6ff"></div></div>
+      <div class="fl"><div class="flb">Present Illness</div><div class="flv" id="fpi"></div></div>
     </div>
-
     <!-- ROS -->
     <div class="card">
-      <div class="card-header">
-        <div class="card-icon orange">📋</div>
-        <div>
-          <div class="card-title">ROS</div>
-          <div class="card-sub">Review of Systems</div>
-        </div>
-      </div>
-      <div class="ros-chips" id="f-ros"></div>
-      <div style="margin-top:12px">
-        <div class="field-label" style="margin-bottom:8px">P/E 권고사항</div>
-        <div id="f-pe"></div>
-      </div>
+      <div class="ch"><div class="ci or">📋</div><div><div class="ctit">ROS</div><div class="csub">Review of Systems</div></div></div>
+      <div class="ros" id="fros"></div>
+      <div style="margin-top:12px"><div class="flb" style="margin-bottom:8px">P/E 권고사항</div><div id="fpe"></div></div>
     </div>
-
-    <!-- LAB (비정상치 강조) -->
-    <div class="card" id="lab-section">
-      <div class="card-header">
-        <div class="card-icon red">🧪</div>
-        <div>
-          <div class="card-title">검사 결과</div>
-          <div class="card-sub">비정상치 H/L 강조 표시</div>
-        </div>
-        <span class="card-badge badge-red" id="lab-abnormal-badge"></span>
-      </div>
-      <div class="lab-grid" id="f-lab"></div>
-      <div style="font-size:11px;color:var(--sub);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
-        * 검사 결과가 없는 경우 OCR 문서에서 추출된 수치가 표시됩니다
-      </div>
+    <!-- LAB -->
+    <div class="card" id="lab">
+      <div class="ch"><div class="ci rd">🧪</div><div><div class="ctit">검사 결과</div><div class="csub">비정상치 H/L 강조</div></div><span class="cbdg" id="labbdg"></span></div>
+      <div class="lg" id="flab"></div>
+      <div style="font-size:11px;color:var(--sub);margin-top:10px;padding-top:8px;border-top:1px solid var(--bd)">* OCR 문서에서 추출된 수치가 표시됩니다</div>
     </div>
-
-    <!-- PAST HISTORY + MEDICATIONS -->
+    <!-- 과거력 & 복용약 -->
     <div class="card">
-      <div class="card-header">
-        <div class="card-icon green">💊</div>
-        <div>
-          <div class="card-title">과거력 &amp; 복용약</div>
-          <div class="card-sub">처방전 OCR 분석 결과</div>
-        </div>
-        <span class="card-badge badge-green" id="med-count-badge"></span>
-      </div>
-      <div class="field" id="pmh-section">
-        <div class="field-label">Past Medical History</div>
-        <div class="field-value" id="f-pmh"></div>
-      </div>
-      <div class="med-table-wrap">
-        <table>
-          <thead><tr><th>약품명</th><th>용량/횟수</th><th>처방일</th><th>병원</th></tr></thead>
-          <tbody id="f-meds-table"></tbody>
-        </table>
-      </div>
+      <div class="ch"><div class="ci gr">💊</div><div><div class="ctit">과거력 &amp; 복용약</div><div class="csub">처방전 OCR 분석</div></div><span class="cbdg bg" id="medbdg"></span></div>
+      <div class="fl"><div class="flb">Past Medical History</div><div class="flv" id="fpmh"></div></div>
+      <div class="tw"><table><thead><tr><th>약품명</th><th>용량/횟수</th><th>처방일</th><th>병원</th></tr></thead><tbody id="fmeds"></tbody></table></div>
     </div>
-
-    <!-- ATTACHMENTS -->
-    <div class="card" id="attach-section" style="display:none">
-      <div class="card-header">
-        <div class="card-icon blue">📎</div>
-        <div>
-          <div class="card-title">첨부 파일</div>
-          <div class="card-sub">탭하면 원본 보기</div>
-        </div>
-      </div>
-      <div class="attach-scroll" id="f-attachments"></div>
-      <div id="f-ocr-raw"></div>
+    <!-- 첨부파일 -->
+    <div class="card" id="attach" style="display:none">
+      <div class="ch"><div class="ci bl">📎</div><div><div class="ctit">첨부 파일</div><div class="csub">탭하면 원본 보기</div></div></div>
+      <div class="ascr" id="fattach"></div>
+      <div id="focr"></div>
     </div>
-
-    <!-- IMPRESSION -->
-    <div class="card" id="impression-section">
-      <div class="card-header">
-        <div class="card-icon green">✅</div>
-        <div>
-          <div class="card-title">Impression</div>
-          <div class="card-sub">AI 감별 진단 요약</div>
-        </div>
-        <span class="card-badge badge-green">AI</span>
-      </div>
-      <div class="impression-box">
-        <div class="impression-text" id="f-impression"></div>
-        <div class="ddx-list" id="f-ddx"></div>
-      </div>
+    <!-- Impression -->
+    <div class="card" id="imp">
+      <div class="ch"><div class="ci gr">✅</div><div><div class="ctit">Impression</div><div class="csub">AI 감별 진단</div></div><span class="cbdg bg">AI</span></div>
+      <div class="imbox"><div class="imt" id="fimp"></div><div class="ddxl" id="fddx"></div></div>
     </div>
+    <div class="meta"><span id="metaid"></span><span id="metats"></span></div>
+  </div>
 
-    <!-- META -->
-    <div class="meta-row">
-      <span id="meta-id"></span>
-      <span id="meta-time"></span>
-    </div>
-
-  </div><!-- /report -->
-</div><!-- /container -->
-
-<!-- IMAGE MODAL -->
-<div class="modal-overlay" id="img-modal" onclick="closeModal()">
-  <button class="modal-close">✕</button>
-  <img class="modal-img" id="modal-img" src="" alt="">
-  <div class="modal-label" id="modal-label"></div>
 </div>
 
-<script>
-// ════════════════════════════════════════════════════════════
-// CLOCK
-// ════════════════════════════════════════════════════════════
-function updateClock() {
-  const now = new Date();
-  document.getElementById('header-time').textContent =
-    now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-}
-updateClock(); setInterval(updateClock, 30000);
+<div class="mov" id="mov" onclick="closeMov()"><button class="mcl">✕</button><img class="mimg" id="mimg" src="" alt=""></div>
 
-// ════════════════════════════════════════════════════════════
-// URL PARAM READER  (QR → ?data=base64encodedJSON)
-// ════════════════════════════════════════════════════════════
-function tryLoadFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  const raw = params.get('data');
-  if (!raw) return false;
-  try {
-    const decoded = JSON.parse(atob(raw));
-    renderReport(decoded, false);
-    return true;
-  } catch(e) {
-    console.warn('URL data parse failed:', e);
-    return false;
+<script>
+let scanner=null, scanning=false;
+
+// Clock
+function tick(){document.getElementById('htime').textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}
+tick();setInterval(tick,30000);
+
+function scrollTo2(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'})}
+function showImg(u){document.getElementById('mimg').src=u;document.getElementById('mov').classList.add('on')}
+function closeMov(){document.getElementById('mov').classList.remove('on')}
+
+// QR SCANNER
+function startScan(){
+  if(scanning){stopScan();return}
+  const btn=document.getElementById('scan-btn');
+  btn.textContent='⏹ 스캔 중지';btn.classList.add('scan-stop');
+  scanner=new Html5Qrcode('reader');
+  scanner.start({facingMode:'environment'},{fps:10,qrbox:220},onScanSuccess,()=>{}).then(()=>scanning=true).catch(e=>{alert('카메라 접근 실패: '+e);btn.textContent='📷 QR 스캔 시작';btn.classList.remove('scan-stop')});
+}
+function stopScan(){
+  if(scanner&&scanning){scanner.stop().catch(()=>{});scanning=false}
+  const btn=document.getElementById('scan-btn');btn.textContent='📷 QR 스캔 시작';btn.classList.remove('scan-stop');
+}
+async function onScanSuccess(text){
+  stopScan();
+  // Firebase ID인지 base64 data인지 판단
+  try{
+    const url=new URL(text);
+    const id=url.searchParams.get('id');
+    const data=url.searchParams.get('data');
+    if(id){await loadFromFirebase(id)}
+    else if(data){const d=JSON.parse(decodeURIComponent(escape(atob(data))));renderReport(d,false)}
+    else{alert('알 수 없는 QR 형식입니다.')}
+  }catch(e){
+    // URL이 아닌 경우 직접 JSON 파싱 시도
+    try{const d=JSON.parse(text);renderReport(d,false)}
+    catch{alert('QR 코드를 읽었으나 형식이 맞지 않습니다.\n'+text.slice(0,100))}
   }
 }
 
-// ════════════════════════════════════════════════════════════
-// SAMPLE DATA
-// ════════════════════════════════════════════════════════════
-const SAMPLE_DATA = {
-  id: "ER-847291",
-  timestamp: new Date(Date.now() - 18 * 60000).toISOString(),
-  reason: "갑자기 왼쪽 팔에 힘이 빠지고 말이 어눌해졌어요. 30분 전부터 시작됐어요.",
-  summary: {
-    cc: "좌측 상지 근력 저하 및 구음 장애 — 급성 발현, 내원 약 30분 전 시작",
-    pi: "68세 고혈압, 당뇨 기왕력 있는 남성으로 약 30분 전 갑자기 좌측 팔 힘이 빠지고 말이 어눌해지는 증상 발생. 두통이나 의식 저하는 없으나 좌측 안면 처짐이 동반됨. 환자 직접 보고: '밥을 먹다가 갑자기 젓가락을 못 잡겠더라고요.'",
-    ros: ["좌측 상지 근력 저하 (+)", "구음 장애 (+)", "좌측 안면 처짐 (+)", "두통 (-)", "의식 저하 (-)", "시야 장애 (+/-)", "오심/구토 (-)", "흉통 (-)"],
-    pe_suggestions: [
-      "NIHSS 즉시 시행", "양측 혈압 측정 (차이 확인)", "안면 대칭성 / 혀 편위 확인",
-      "상하지 근력 5단계 평가", "Babinski sign", "동공 반사 확인"
+// Firebase load
+async function loadFromFirebase(id){
+  document.getElementById('scan-panel').style.display='none';
+  document.getElementById('loading').style.display='block';
+  try{
+    if(!window._fb2){await new Promise(r=>window.addEventListener('fb2-ready',r,{once:true}))}
+    const {db,ref,get}=window._fb2;
+    const snap=await get(ref(db,'patients/'+id));
+    if(!snap.exists()){alert('데이터를 찾을 수 없습니다. ID: '+id);document.getElementById('scan-panel').style.display='block';document.getElementById('loading').style.display='none';return}
+    renderReport(snap.val(),false);
+  }catch(e){alert('Firebase 오류: '+e.message);document.getElementById('scan-panel').style.display='block';document.getElementById('loading').style.display='none'}
+}
+
+// DEMO DATA
+const DEMO={
+  id:'ER-847291',timestamp:new Date(Date.now()-18*60000).toISOString(),
+  reason:'갑자기 왼쪽 팔에 힘이 빠지고 말이 어눌해졌어요. 30분 전부터 시작됐어요.',
+  triage:'critical',
+  summary:{
+    cc:'좌측 상지 근력 저하 및 구음 장애 — 급성 발현, 내원 약 30분 전 시작',
+    pi:'68세 고혈압·당뇨 기왕력 남성. 30분 전 갑자기 좌측 팔 힘이 빠지고 말이 어눌해짐. 두통·의식저하 없으나 좌측 안면 처짐 동반.',
+    ros:['좌측 상지 근력 저하 (+)','구음 장애 (+)','좌측 안면 처짐 (+)','두통 (-)','의식 저하 (-)','시야 장애 (+/-)','흉통 (-)'],
+    pe_suggestions:['NIHSS 즉시 시행','양측 혈압 측정','안면 대칭성 확인','상하지 근력 5단계 평가','Babinski sign','동공 반사 확인'],
+    impression:'급성 허혈성 뇌졸중 (AIS) 의심 — tPA 적응증 평가 필요. FAST (+). Last known well 30분. CT/MRI 즉시 시행 권고.',
+    ddx:['급성 허혈성 뇌졸중 (AIS)','뇌출혈 (ICH)','Todd\'s paralysis','저혈당성 뇌병증'],
+    medications:[
+      {drug:'Amlodipine 5mg',dose:'5mg',frequency:'1일1회',duration:'30일',hospital:'연세내과',indication:'고혈압'},
+      {drug:'Metformin 500mg',dose:'500mg',frequency:'1일2회',duration:'30일',hospital:'연세내과',indication:'당뇨'},
+      {drug:'Atorvastatin 20mg',dose:'20mg',frequency:'1일1회',duration:'30일',hospital:'연세내과',indication:'고지혈증'}
     ],
-    impression: "급성 허혈성 뇌졸중 (AIS) 의심 — tPA 적응증 평가 필요. FAST (+). Last known well 30분. CT/MRI 즉시 시행 권고.",
-    ddx: ["급성 허혈성 뇌졸중 (AIS)", "뇌출혈 (ICH)", "Todd's paralysis (경련 후)", "저혈당성 뇌병증"],
-    medications: [
-      { drug: "Amlodipine (암로디핀)", dose: "5mg", frequency: "1일 1회", duration: "30일", hospital: "연세내과의원", indication: "고혈압" },
-      { drug: "Metformin (메트포르민)", dose: "500mg", frequency: "1일 2회", duration: "30일", hospital: "연세내과의원", indication: "제2형 당뇨" },
-      { drug: "Atorvastatin (아토르바스타틴)", dose: "20mg", frequency: "1일 1회", duration: "30일", hospital: "연세내과의원", indication: "고지혈증" }
+    alerts:['⚠️ 혈소판 감소 기왕력 — 항응고제 투여 전 확인 필요','⏱️ Last known well: 30분 전 → tPA window 내'],
+    pmh:'고혈압(10년), 제2형 당뇨(7년), 고지혈증. 2년 전 심방세동 외래 치료력.',
+    labResults:[
+      {name:'Glucose',value:'284',unit:'mg/dL',ref:'70–100',flag:'H'},
+      {name:'HbA1c',value:'9.2',unit:'%',ref:'<5.7',flag:'H'},
+      {name:'PLT',value:'88',unit:'×10³',ref:'150–400',flag:'L'},
+      {name:'INR',value:'1.1',unit:'',ref:'0.8–1.2',flag:'N'},
+      {name:'Na',value:'138',unit:'mEq/L',ref:'135–145',flag:'N'},
+      {name:'Troponin I',value:'0.02',unit:'ng/mL',ref:'<0.04',flag:'N'}
     ],
-    alerts: [
-      "⚠️ 혈소판 감소 기왕력 (처방전 기록) — 항응고제 투여 전 확인 필요",
-      "⏱️ Last known well: 내원 30분 전 → tPA window 내 (4.5시간)"
-    ],
-    pmh: "고혈압 (10년), 제2형 당뇨 (7년), 고지혈증. 2년 전 심방세동으로 외래 치료력 있음.",
-    labResults: [
-      { name: "Glucose", value: "284", unit: "mg/dL", ref: "70–100", flag: "H" },
-      { name: "HbA1c", value: "9.2", unit: "%", ref: "< 5.7", flag: "H" },
-      { name: "INR", value: "1.1", unit: "", ref: "0.8–1.2", flag: "N" },
-      { name: "PLT", value: "88", unit: "×10³", ref: "150–400", flag: "L" },
-      { name: "Na", value: "138", unit: "mEq/L", ref: "135–145", flag: "N" },
-      { name: "Hb", value: "13.2", unit: "g/dL", ref: "13–17", flag: "N" },
-      { name: "CRP", value: "0.4", unit: "mg/dL", ref: "< 0.5", flag: "N" },
-      { name: "Troponin I", value: "0.02", unit: "ng/mL", ref: "< 0.04", flag: "N" }
-    ]
+    triage:'critical'
   },
-  medOcr: "처방전\n의료기관명: 연세내과의원\n처방일: 2025-01-15\n환자명: 김○○ (68세/남)\n\n1. 암로디핀 5mg 1T 1일1회 아침식후 30일\n2. 메트포르민 500mg 1T 1일2회 식후 30일\n3. 아토르바스타틴 20mg 1T 1일1회 취침전 30일\n4. 아스피린 100mg (혈소판 감소로 2024.10 중단)\n\n특이사항: 혈소판 감소로 아스피린 중단함",
-  medImages: [],
-  rxImages: [],
-  fileCount: { medical: 2, rx: 1 },
-  triage: "critical"
+  medOcr:'처방전\n의료기관명: 연세내과의원\n처방일: 2025-01-15\n\n1. 암로디핀 5mg 1T 1일1회 아침식후 30일\n2. 메트포르민 500mg 1T 1일2회 식후 30일\n3. 아토르바스타틴 20mg 1T 취침전 30일\n(아스피린 100mg - 혈소판 감소로 2024.10 중단)',
+  medImages:[],rxImages:[]
 };
 
-// ════════════════════════════════════════════════════════════
-// RENDER REPORT
-// ════════════════════════════════════════════════════════════
-function renderReport(data, isDemo) {
-  document.getElementById('empty-state').style.display = 'none';
-  document.getElementById('report').style.display = 'block';
-  if (isDemo) document.getElementById('demo-banner').style.display = 'flex';
+function loadDemo(){renderReport(DEMO,true)}
 
-  const d = data.summary || {};
-  const ts = new Date(data.timestamp);
-  const elapsed = Math.round((Date.now() - ts) / 60000);
+// RENDER
+function renderReport(data,isDemo){
+  document.getElementById('scan-panel').style.display=isDemo?'none':'none';
+  document.getElementById('loading').style.display='none';
+  document.getElementById('report').style.display='block';
+  if(!isDemo)document.getElementById('scan-panel').style.display='none';
 
-  // Header meta
-  document.getElementById('header-meta').textContent = data.id + ' · ' + elapsed + '분 전 접수';
+  const d=data.summary||{};
+  const ts=new Date(data.timestamp);
+  const el=Math.round((Date.now()-ts)/60000);
+  document.getElementById('hmeta').textContent=(data.id||'')+(el?' · '+el+'분 전 접수':'');
 
-  // Triage banner
-  const triage = data.triage || 'urgent';
-  const tb = document.getElementById('triage-banner');
-  const triageMap = {
-    critical: { cls: 'critical', icon: '🔴', label: 'CRITICAL — 즉시 처치 필요' },
-    urgent:   { cls: 'urgent',   icon: '🟠', label: 'URGENT — 빠른 처치 필요' },
-    semi:     { cls: 'semi',     icon: '🔵', label: 'SEMI-URGENT' }
-  };
-  const tm = triageMap[triage] || triageMap.urgent;
-  tb.className = 'triage-banner ' + tm.cls;
-  document.getElementById('triage-icon').textContent = tm.icon;
-  document.getElementById('triage-label').textContent = tm.label;
-  document.getElementById('triage-cc').textContent = d.cc || data.reason || '';
+  // Triage
+  const tri=data.triage||d.triage||'urgent';
+  const tb=document.getElementById('tri');
+  const tm={critical:{cls:'cr',icon:'🔴',lbl:'CRITICAL — 즉시 처치 필요'},urgent:{cls:'ur',icon:'🟠',lbl:'URGENT — 빠른 처치 필요'},semi:{cls:'se',icon:'🔵',lbl:'SEMI-URGENT'}};
+  const tv=tm[tri]||tm.urgent;
+  tb.className='tri '+tv.cls;
+  document.getElementById('tiicon').textContent=tv.icon;
+  document.getElementById('tilbl').textContent=tv.lbl;
+  document.getElementById('ticc').textContent=d.cc||data.reason||'';
 
   // CC time badge
-  document.getElementById('cc-time-badge').textContent = elapsed + '분 전';
-  document.getElementById('cc-time-badge').className = 'card-badge ' + (elapsed < 30 ? 'badge-red' : elapsed < 60 ? 'badge-orange' : 'badge-blue');
+  document.getElementById('cctime').textContent=el+'분 전';
+  document.getElementById('cctime').className='cbdg '+(el<30?'br':el<60?'cbdg" style="background:var(--obg);color:var(--orange);border:1px solid rgba(210,153,34,.3)':'bb');
 
   // Alerts
-  let alertsHtml = '';
-  if (d.alerts && d.alerts.length) {
-    d.alerts.forEach(a => {
-      alertsHtml += `<div class="alert-box"><span style="font-size:18px;flex-shrink:0">⚠️</span><div class="alert-text">${a}</div></div>`;
-    });
-  }
-  document.getElementById('alerts-section').innerHTML = alertsHtml;
+  let ah='';
+  (d.alerts||[]).forEach(a=>{ah+=`<div class="abox"><span style="font-size:18px;flex-shrink:0">⚠️</span><div class="atxt">${a}</div></div>`});
+  document.getElementById('alerts-sec').innerHTML=ah;
 
-  // CC / PI
-  document.getElementById('f-cc').textContent = d.cc || '-';
-  document.getElementById('f-pi').textContent = d.pi || '-';
+  // CC/PI
+  document.getElementById('fcc').textContent=d.cc||'-';
+  document.getElementById('fpi').textContent=d.pi||'-';
 
   // ROS
-  const rosChips = (d.ros || []).map(s => {
-    const isPos = s.includes('(+)') || (!s.includes('(-)') && !s.includes('(-/+)'));
-    return `<span class="ros-chip ${isPos ? 'positive' : 'negative'}">${s}</span>`;
-  }).join('');
-  document.getElementById('f-ros').innerHTML = rosChips || '<span style="color:var(--sub);font-size:13px">정보 없음</span>';
+  document.getElementById('fros').innerHTML=(d.ros||[]).map(s=>{const p=s.includes('(+)')&&!s.includes('(-)');return`<span class="rch ${p?'rp':'rn'}">${s}</span>`}).join('')||'<span style="color:var(--sub);font-size:13px">정보 없음</span>';
+  document.getElementById('fpe').innerHTML=(d.pe_suggestions||[]).map(p=>`<div style="font-size:13px;color:var(--sub);padding:4px 0;border-bottom:1px solid var(--bd);display:flex;gap:8px"><span style="color:var(--orange)">→</span>${p}</div>`).join('')||'<span style="color:var(--sub);font-size:13px">정보 없음</span>';
 
-  // P/E
-  const peHtml = (d.pe_suggestions || []).map(p =>
-    `<div style="font-size:13px;color:var(--sub);padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:flex-start"><span style="color:var(--orange);flex-shrink:0">→</span>${p}</div>`
-  ).join('');
-  document.getElementById('f-pe').innerHTML = peHtml || '<span style="color:var(--sub);font-size:13px">정보 없음</span>';
+  // Lab
+  const labs=d.labResults||[];
+  const abn=labs.filter(l=>l.flag!=='N').length;
+  document.getElementById('labbdg').textContent=abn>0?'비정상 '+abn+'건':'정상';
+  document.getElementById('labbdg').className='cbdg '+(abn>0?'br':'bg');
+  const sorted=[...labs].sort((a,b)=>({H:0,L:1,N:2}[a.flag]||2)-({H:0,L:1,N:2}[b.flag]||2));
+  document.getElementById('flab').innerHTML=sorted.length?sorted.map(l=>{
+    const c=l.flag==='H'?'hi':l.flag==='L'?'lo':'nm';
+    const f=l.flag!=='N'?`<span class="lf ${l.flag==='H'?'fh':'fl2'}">${l.flag}</span>`:'';
+    return`<div class="li ${c}"><div class="ln">${l.name}</div><div class="lv">${l.value}<span style="font-size:12px;font-weight:500"> ${l.unit}</span>${f}</div><div class="lr">정상: ${l.ref}</div></div>`;
+  }).join(''):`<div style="grid-column:1/-1;font-size:13px;color:var(--sub);padding:8px 0">검사 결과 없음</div>`;
 
-  // Lab results
-  const labs = d.labResults || [];
-  const abnormalCount = labs.filter(l => l.flag !== 'N').length;
-  document.getElementById('lab-abnormal-badge').textContent = abnormalCount > 0 ? `비정상 ${abnormalCount}건` : '정상';
-  document.getElementById('lab-abnormal-badge').className = 'card-badge ' + (abnormalCount > 0 ? 'badge-red' : 'badge-green');
-
-  let labHtml = '';
-  if (labs.length) {
-    // Sort: H first, then L, then N
-    const sorted = [...labs].sort((a,b) => {
-      const order = {H:0, L:1, N:2};
-      return (order[a.flag]||2) - (order[b.flag]||2);
-    });
-    sorted.forEach(l => {
-      const cls = l.flag === 'H' ? 'high' : l.flag === 'L' ? 'low' : 'normal';
-      const flagHtml = l.flag !== 'N' ? `<span class="lab-flag flag-${l.flag.toLowerCase()}">${l.flag}</span>` : '';
-      labHtml += `<div class="lab-item ${cls}">
-        <div class="lab-name">${l.name}</div>
-        <div class="lab-val">${l.value}<span style="font-size:12px;font-weight:500"> ${l.unit}</span>${flagHtml}</div>
-        <div class="lab-ref">정상: ${l.ref}</div>
-      </div>`;
-    });
-  } else {
-    labHtml = `<div style="grid-column:1/-1;font-size:13px;color:var(--sub);padding:8px 0">검사 결과가 없습니다. OCR 문서에서 수치를 확인하세요.</div>`;
-  }
-  document.getElementById('f-lab').innerHTML = labHtml;
-
-  // PMH
-  document.getElementById('f-pmh').textContent = d.pmh || '(미입력)';
-
-  // Medications table
-  const meds = d.medications || [];
-  document.getElementById('med-count-badge').textContent = meds.length + '종';
-  document.getElementById('med-count-badge').className = 'card-badge ' + (meds.length > 0 ? 'badge-green' : 'badge-blue');
-  let medsHtml = '';
-  meds.forEach(m => {
-    medsHtml += `<tr>
-      <td><div class="drug-name">${m.drug||'-'}</div><div class="drug-dose"><span class="indication-tag">${m.indication||'-'}</span></div></td>
-      <td style="color:var(--sub)">${m.dose||'-'}<br><span style="font-size:11px">${m.frequency||''}</span></td>
-      <td style="color:var(--sub);font-size:11.5px">${m.duration||'-'}</td>
-      <td style="color:var(--sub);font-size:11.5px">${m.hospital||'-'}</td>
-    </tr>`;
-  });
-  if (!medsHtml) medsHtml = `<tr><td colspan="4" style="color:var(--sub);font-size:13px;padding:12px 10px">복용약 정보 없음</td></tr>`;
-  document.getElementById('f-meds-table').innerHTML = medsHtml;
+  // PMH & Meds
+  document.getElementById('fpmh').textContent=d.pmh||'(미입력)';
+  const meds=d.medications||[];
+  document.getElementById('medbdg').textContent=meds.length+'종';
+  document.getElementById('fmeds').innerHTML=meds.map(m=>`<tr><td><div class="dn">${m.drug||'-'}</div><div class="ds"><span class="itag">${m.indication||'-'}</span></div></td><td style="color:var(--sub)">${m.dose||'-'}<br><span style="font-size:11px">${m.frequency||''}</span></td><td style="color:var(--sub);font-size:11.5px">${m.duration||'-'}</td><td style="color:var(--sub);font-size:11.5px">${m.hospital||'-'}</td></tr>`).join('')||`<tr><td colspan="4" style="color:var(--sub);font-size:13px;padding:12px 10px">복용약 정보 없음</td></tr>`;
 
   // Attachments
-  const allImages = [
-    ...(data.medImages||[]).map(i=>({...i,tag:'doc'})),
-    ...(data.rxImages||[]).map(i=>({...i,tag:'rx'}))
-  ];
-  if (allImages.length > 0) {
-    document.getElementById('attach-section').style.display = 'block';
-    let attachHtml = '';
-    allImages.forEach(img => {
-      const tagLabel = img.tag === 'doc' ? '의료서류' : '약봉투';
-      attachHtml += `<div class="attach-thumb-wrap" onclick="openModal('${img.url}','${img.name}')">
-        <img class="attach-thumb-img" src="${img.url}" alt="${img.name}">
-        <div style="padding:5px 7px"><span class="attach-tag-sm ${img.tag}">${tagLabel}</span><div class="attach-thumb-label">${img.name}</div></div>
-      </div>`;
-    });
-    document.getElementById('f-attachments').innerHTML = attachHtml;
-    if (data.medOcr) {
-      document.getElementById('f-ocr-raw').innerHTML = `<div class="field-label" style="margin-top:12px;margin-bottom:6px">OCR 원문</div><div class="ocr-preview">${data.medOcr}</div>`;
-    }
-  } else if (data.medOcr || data.rxOcr) {
-    document.getElementById('attach-section').style.display = 'block';
-    document.getElementById('f-ocr-raw').innerHTML = `<div class="field-label" style="margin-bottom:6px">OCR 추출 텍스트</div><div class="ocr-preview">${data.medOcr||''}\n${data.rxOcr||''}</div>`;
+  const imgs=[...(data.medImages||[]).map(i=>({...i,tag:'dc'})),...(data.rxImages||[]).map(i=>({...i,tag:'rx'}))];
+  if(imgs.length||data.medOcr||data.rxOcr){
+    document.getElementById('attach').style.display='block';
+    document.getElementById('fattach').innerHTML=imgs.map(img=>`<div class="ath" onclick="showImg('${img.url}')"><img class="athi" src="${img.url}" alt=""><div style="padding:5px 7px"><span class="atgs ${img.tag}">${img.tag==='dc'?'의료서류':'약봉투'}</span><div class="athl">${img.name||''}</div></div></div>`).join('');
+    if(data.medOcr||data.rxOcr)document.getElementById('focr').innerHTML=`<div class="flb" style="margin-top:12px;margin-bottom:6px">OCR 원문</div><div class="ocrprev">${(data.medOcr||'')+(data.rxOcr?'\n\n[약봉투]\n'+data.rxOcr:'')}</div>`;
   }
 
   // Impression
-  document.getElementById('f-impression').textContent = d.impression || '-';
-  if (d.ddx && d.ddx.length) {
-    let ddxHtml = `<div class="ddx-label">감별 진단</div>`;
-    d.ddx.forEach((dx, i) => {
-      ddxHtml += `<div class="ddx-item"><div class="ddx-num">${i+1}</div>${dx}</div>`;
-    });
-    document.getElementById('f-ddx').innerHTML = ddxHtml;
-  }
+  document.getElementById('fimp').textContent=d.impression||'-';
+  document.getElementById('fddx').innerHTML=d.ddx?.length?`<div class="ddxlb">감별 진단</div>${d.ddx.map((dx,i)=>`<div class="ddxi"><div class="ddxn">${i+1}</div>${dx}</div>`).join('')}`:'';
 
   // Meta
-  document.getElementById('meta-id').textContent = '접수번호: ' + data.id;
-  document.getElementById('meta-time').textContent = ts.toLocaleString('ko-KR');
+  document.getElementById('metaid').textContent='접수번호: '+(data.id||'-');
+  document.getElementById('metats').textContent=ts.toLocaleString('ko-KR');
 }
 
-// ════════════════════════════════════════════════════════════
-// MODAL
-// ════════════════════════════════════════════════════════════
-function openModal(url, label) {
-  document.getElementById('modal-img').src = url;
-  document.getElementById('modal-label').textContent = label || '';
-  document.getElementById('img-modal').classList.add('show');
-}
-function closeModal() { document.getElementById('img-modal').classList.remove('show'); }
-
-// ════════════════════════════════════════════════════════════
-// DEMO / SCROLL
-// ════════════════════════════════════════════════════════════
-function loadDemo() { renderReport(SAMPLE_DATA, true); }
-function scrollToSection(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-
-// ════════════════════════════════════════════════════════════
-// INIT — URL 파라미터 먼저 시도, 없으면 빈 화면
-// ════════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => { tryLoadFromURL(); });
+// URL 파라미터 자동 로드
+window.addEventListener('DOMContentLoaded',async()=>{
+  const p=new URLSearchParams(window.location.search);
+  const id=p.get('id'), data=p.get('data');
+  if(id){await loadFromFirebase(id)}
+  else if(data){try{const d=JSON.parse(decodeURIComponent(escape(atob(data))));renderReport(d,false)}catch(e){console.error(e)}}
+});
 </script>
 </body>
 </html>
