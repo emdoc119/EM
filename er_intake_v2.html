@@ -296,51 +296,88 @@ function f2b64(f){return new Promise((ok,no)=>{const r=new FileReader();r.onload
 // Gemini API — v1 사용, 작동 확인된 모델만
 // 모델 목록: gemini-2.0-flash-exp (v1beta), gemini-1.0-pro (v1)
 const API_CONFIGS=[
-  {model:'gemini-2.0-flash-exp', ver:'v1beta'},
-  {model:'gemini-2.0-flash',     ver:'v1beta'},
-  {model:'gemini-1.0-pro',       ver:'v1'},
-  {model:'gemini-pro',           ver:'v1'},
+// 2026년 기준 최신 안정화 모델 리스트
+const API_CONFIGS = [
+  { model: 'gemini-1.5-flash', ver: 'v1' }, // 가장 빠르고 안정적임
+  { model: 'gemini-1.5-pro',   ver: 'v1' }, // 고성능 분석용
+  { model: 'gemini-2.0-flash', ver: 'v1' }  // 최신 모델
 ];
 
-async function geminiText(prompt){
-  let lastErr='';
-  for(const {model,ver} of API_CONFIGS){
-    try{
-      const url=`https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${GKEY}`;
-      const body={contents:[{role:'user',parts:[{text:prompt}]}]};
-      const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      const d=await res.json();
-      if(!res.ok){lastErr=`${model}: ${d?.error?.message||res.status}`;console.warn('❌',lastErr);continue}
-      const txt=d.candidates?.[0]?.content?.parts?.[0]?.text||'';
-      if(txt){console.log('✅ OK:',model);return txt}
-    }catch(e){lastErr=e.message;console.warn('❌',model,e.message)}
+async function geminiText(prompt) {
+  let lastErr = '';
+  for (const { model, ver } of API_CONFIGS) {
+    try {
+      // 엔드포인트를 v1 또는 v1beta로 자동 대응
+      const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${GKEY}`;
+      const body = {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }]
+      };
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      
+      const d = await res.json();
+      if (!res.ok) {
+        lastErr = `${model}: ${d?.error?.message || res.status}`;
+        console.warn('❌ AI 호출 실패:', lastErr);
+        continue;
+      }
+      
+      const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (txt) {
+        console.log('✅ AI 응답 성공:', model);
+        return txt;
+      }
+    } catch (e) {
+      lastErr = e.message;
+      console.warn('❌ 네트워크 오류:', model, e.message);
+    }
   }
-  throw new Error('AI 오류: '+lastErr);
+  throw new Error('모든 AI 모델 호출에 실패했습니다: ' + lastErr);
 }
 
-async function geminiVision(imageBase64, mimeType, prompt){
-  // gemini-pro는 이미지 미지원 → vision 모델만 시도
-  const VISION_CONFIGS=[
-    {model:'gemini-2.0-flash-exp', ver:'v1beta'},
-    {model:'gemini-2.0-flash',     ver:'v1beta'},
+async function geminiVision(imageBase64, mimeType, prompt) {
+  // 비전 기능은 1.5-flash가 가장 가성비와 속도가 좋습니다.
+  const VISION_CONFIGS = [
+    { model: 'gemini-1.5-flash', ver: 'v1' },
+    { model: 'gemini-2.0-flash', ver: 'v1' }
   ];
-  let lastErr='';
-  for(const {model,ver} of VISION_CONFIGS){
-    try{
-      const url=`https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${GKEY}`;
-      const body={contents:[{role:'user',parts:[
-        {inline_data:{mime_type:mimeType,data:imageBase64}},
-        {text:prompt}
-      ]}]};
-      const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      const d=await res.json();
-      if(!res.ok){lastErr=`${model}: ${d?.error?.message||res.status}`;console.warn('❌',lastErr);continue}
-      const txt=d.candidates?.[0]?.content?.parts?.[0]?.text||'';
-      if(txt){console.log('✅ Vision OK:',model);return txt}
-    }catch(e){lastErr=e.message;console.warn('❌',model,e.message)}
+  
+  let lastErr = '';
+  for (const { model, ver } of VISION_CONFIGS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${GKEY}`;
+      const body = {
+        contents: [{
+          role: 'user',
+          parts: [
+            { inline_data: { mime_type: mimeType, data: imageBase64 } },
+            { text: prompt }
+          ]
+        }]
+      };
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      
+      const d = await res.json();
+      if (!res.ok) {
+        lastErr = `${model}: ${d?.error?.message || res.status}`;
+        continue;
+      }
+      
+      const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (txt) return txt;
+    } catch (e) {
+      lastErr = e.message;
+    }
   }
-  // 이미지 OCR 실패해도 계속 진행
-  console.warn('Vision 모두 실패, 건너뜀');
   return '[이미지 텍스트 추출 실패]';
 }
 
