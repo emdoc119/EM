@@ -153,6 +153,7 @@
 </div>
 
 <script>
+    // --- 설정 (API 키 적용 및 엔드포인트 v1beta로 변경) ---
     const GKEY = 'AIzaSyAogxTcfOA0ag8ZgGdTbLJmuchxp8uyoqA';
     const DRBASE = 'https://emdoc119.github.io/EM/er_doctor.html';
     
@@ -192,10 +193,9 @@
         recognition.start();
     }
 
-    // --- 최적화된 API 호출 (v1beta 사용) ---
+    // --- 2026년 기준 가장 확실한 호출 방식 (v1beta + gemini-2.0-flash) ---
     async function callGemini(prompt, isVision = false, base64 = null, mime = null) {
-        // v1beta 경로가 현재 최신 모델 호환성이 가장 높습니다.
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GKEY}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GKEY}`;
         
         let contents = [{ role: "user", parts: [{ text: prompt }] }];
         if (isVision && base64) {
@@ -209,10 +209,10 @@
                 body: JSON.stringify({ contents })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error?.message || 'AI API 오류');
+            if (!res.ok) throw new Error(data.error?.message || 'API 호출 오류');
             return data.candidates[0].content.parts[0].text;
         } catch (err) {
-            console.error(err);
+            console.error("Gemini API Error:", err);
             throw err;
         }
     }
@@ -231,18 +231,18 @@
             let ocrTexts = [];
             for (let fObj of [...mf, ...rf]) {
                 const b64 = await f2b64(fObj.file);
-                const txt = await callGemini("이 의료 문서의 텍스트를 모두 추출해 주세요.", true, b64, fObj.file.type);
+                const txt = await callGemini("추출된 텍스트만 원문 그대로 알려주세요.", true, b64, fObj.file.type);
                 ocrTexts.push(txt);
             }
             mocrT = ocrTexts.join("\n\n");
             updatePStep('ps1', '완료');
             
             updatePStep('ps2', '진행 중');
-            // 의학적 가이드라인을 반영한 프롬프트 (Pathophysiology, Symptoms 중심)
-            const summaryPrompt = `당신은 응급실 의사를 보조하는 전문 AI입니다. 환자의 내원 이유와 첨부 서류 내용을 바탕으로 전문적인 의료 요약을 작성하세요. 
-            구조: 1. 주호소(CC), 2. 현병력(PI), 3. 약물 기력(Medication History), 4. 판독 소견(Impression).
-            내원이유: ${reason}
-            추출된 텍스트: ${mocrT}`;
+            // 의료적 맥락을 고려한 프롬프트
+            const summaryPrompt = `응급실 사전 접수 요약: 
+            환자 호소: ${reason}
+            추출 텍스트: ${mocrT}
+            위 정보를 바탕으로 주호소(CC), 현병력(PI), 과거력 및 약물(PH/Med), 소견(Impression) 순으로 전문적으로 요약해 주세요.`;
             
             const summary = await callGemini(summaryPrompt);
             document.getElementById('summaryContent').innerText = summary;
@@ -260,7 +260,7 @@
             setStep(3); 
             showScr('rs');
         } catch (e) {
-            alert('분석 오류: ' + e.message + '\n네트워크 상태나 API 키 설정을 확인하세요.');
+            alert('오류 발생: ' + e.message);
             showScr('main');
             setStep(1);
         }
@@ -268,6 +268,7 @@
 
     function updatePStep(id, status) {
         const el = document.getElementById(id);
+        if (!el) return;
         if (status === '진행 중') el.innerHTML += '<span class="sp"></span>';
         else { el.classList.add('dn'); el.innerHTML = '✅ ' + el.innerText.replace('진행 중', ''); }
     }
